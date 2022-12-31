@@ -1,0 +1,460 @@
+---
+title: "Field season summary"
+date: "Generated `r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+options(knitr.table.format = "html")
+options(knitr.kable.NA = '')
+library(sf)
+library(tmap)
+library(lubridate)
+library(tidyverse)
+library(kableExtra)
+library(DT)
+
+report_year <- 2018
+
+theme_set(theme_bw())
+```
+
+```{r header_image, fig.align='center', out.width= '50%'}
+# knitr::include_graphics(
+#   path = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Bull_Run_at_Manassas_National_Battlefield_Park_09.JPG/1024px-Bull_Run_at_Manassas_National_Battlefield_Park_09.JPG')
+```
+
+**NPS Inventory and Monitoring, National Capital Region Network** 
+
+Document created by Megan Massa 
+
+University of Maryland Center for Environmental Science, Appalachian Laboratory
+
+<hr>
+
+# {.tabset}
+
+## `r report_year` Summary
+
+This document summarizes survey efforts and results for grassland bird monitoring during the `r report_year` field season.
+
+```{r data_import, include = FALSE}
+# Import tidied data (see import_bird_data.R)
+read_rds('data/processed/birds.rds') %>% 
+  list2env(.GlobalEnv)
+
+visits <- filter(visits, year == report_year)
+
+counts <- filter(counts, visit_id %in% visits$visit_id)
+
+# Create summary: number of visits
+n_visits <- 
+  visits %>% 
+  group_by(grts) %>% 
+  summarize(visits = length(unique(visit_id))) %>% 
+  group_by(visits) %>% 
+  summarize(n_points = n())
+
+# Create variables for summary paragraph
+total_pts <- colSums(n_visits)[2]
+three_visits <- 
+  if(any(n_visits$visits == 3)) {unlist(filter(n_visits, visits == 3)[2])} else {0}
+two_visits <- 
+  if(any(n_visits$visits == 2)) {unlist(filter(n_visits, visits == 2)[2])} else {0}
+one_visit <- 
+  if(any(n_visits$visits == 1)) {unlist(filter(n_visits, visits == 1)[2])} else {0}
+date_min <-
+  min(visits$date) %>% format('%d %b')
+date_max <-
+  max(visits$date) %>% format('%d %b')
+time_min <-
+  round(abs(min(visits$start_sun)))
+time_max <-
+  round(abs(max(visits$start_sun)))
+```
+
+### Monitoring effort
+
+The bird monitoring team conducted 
+`r count(filter(visits, year == report_year))` 
+surveys at 
+`r total_pts` 
+total points, of which 
+`r three_visits`
+`r if_else(three_visits == 1, 'point was', 'points were')`
+visited three times,
+`r two_visits` 
+`r if_else(two_visits == 1, 'point was', 'points were')` 
+visited only twice and 
+`r one_visit` 
+`r if_else(one_visit == 1, 'point was', 'points were')` 
+visited only once. 
+Surveys ran from `r date_min` to `r date_max` and were conducted from `r time_min` minutes before local sunrise to `r time_max` minutes (`r round(time_max / 60, 2)` 
+hours) after local sunrise. 
+
+```{r observer_table}
+visits %>% 
+  group_by(observer) %>% 
+  summarize(surveys = n()) %>% 
+  kable(col.names = c('Observer', 'Surveys')) %>% 
+  kable_styling(full_width = FALSE)
+
+```
+
+### Survey conditions
+
+The following graphs summarize environmental conditions during surveys. Dotted red lines indicate threshold recommended values according to survey protocol; surveys past these lines were not conducted under advised conditions.
+
+```{r survey_conditions1, fig.show = "hold", fig.asp = 0.25}
+# Disturbance
+ggplot(visits, aes(x = disturbance)) + geom_bar() + 
+  scale_x_continuous(breaks = seq(from = 0, to = max(visits$disturbance), by = 1))
+
+# Wind
+ggplot(visits, aes(x = wind)) + geom_bar() +
+  scale_x_continuous(breaks = seq(from = 0, to = max(visits$wind), by = 1)) +
+  geom_vline(xintercept = 3.5, color = "red", lty = 2)
+
+# Sky
+ggplot(visits, aes(x = sky)) + geom_bar()
+
+# Start time
+ggplot(visits, aes(x = start_sun)) + 
+  geom_histogram(binwidth = 2.5, closed = "left") + 
+  geom_vline(xintercept = -20, color = "red", lty = 2) + 
+  geom_vline(xintercept = 300-10, color = "red", lty = 2) +
+  labs(x = "start time: minutes since sunrise")
+
+# Date
+ggplot(visits, aes(x = date)) + geom_histogram(binwidth = 1) 
+
+# Temperature
+ggplot(visits, aes(x = temperature)) + geom_histogram(bins = 30)
+
+# Humidity
+ggplot(visits, aes(x = humidity)) + geom_histogram(bins = 30)
+```
+
+```{r survey_conditions2, fig.asp = 0.7}
+# Temp vs humid
+ggplot(visits, aes(x = humidity, y = temperature)) + geom_point() 
+```
+
+
+### Bird detections
+
+```{r species_summary}
+taxonomy <-
+  read_rds('data/processed/taxonomy.rds')
+
+species_list <-
+  distinct(counts, species) %>% 
+    left_join(taxonomy) %>% 
+    left_join(
+      readxl::read_xlsx('data/raw/ACAD Global 2021.02.05.xlsx', 1) %>% 
+        select(common_name = `Common Name`, 
+               habitat1 = `Primary Breeding Habitat`, 
+               habitat2 = `Secondary Breeding Habitat`,
+               iucn = `IUCN Red List 2018`,
+               pif = `CI`),
+      by = "common_name") %>% 
+    arrange(tax_order)
+
+full_data <-
+  counts %>% 
+  left_join(visits) %>% 
+  left_join(points) %>% 
+  left_join(species_list)
+
+species_by_park <-
+  full_data %>% 
+  group_by(park) %>% 
+    select(any_of(names(species_list))) %>% 
+  group_by(park, species) %>% 
+  summarize(detections = n()) %>% 
+  left_join(species_list) %>% 
+  arrange(park, tax_order) %>% 
+  ungroup()
+
+park_summary <-
+  full_data %>% 
+  group_by(park) %>% 
+  summarize(
+    surveys = n_distinct(visit_id),
+    points = n_distinct(grts),
+    species = n_distinct(species[tax_level=='species']))
+
+grass_spp <- 
+  species_list %>% 
+  filter(str_detect(habitat1, "Grassland") | str_detect(habitat2, "Grassland")) %>% 
+  pull(species)
+
+# All obligate grassland species of temperate north america from Vickery et al. 1999
+vickery <-
+  c("NOHA","SWHA","FEHA","RLHA","STGR","GRPC","LEPC","MOPL","UPSA","LBCU","MAGO","BUOW","LEOW","SEOW","HOLA","SEWR","AMPI","SPPI","BACS","VESP","LABU","SAVS","GRSP","BAIS", "HESP","LCSP","TBLO","CCLO","DICL","BOBO","EAME","WEME")
+
+# All facultative grassland species of temperate north america from Vickery et al. 1999
+vickery2 <-
+  c('AMBI','CAEG','TUVU','CANG','GADW','AMWI','MALL','BWTE','NSHO','NOPI','GWTE','AMKE','MERL','PEFA','PRFA','RNEP','WIPT','NOBO','YERA','SACR','WHCR','KILL','LEYE','WILL','LESA','WISN','WIPH','FRGU','MODO','BANO','CONI','COPO','SAPH','ATFL','CAKI','WEKI','EAKI','STFL','LOSH','NSHR','CHRA','EABL','WEBL','MOBL','COYE','CANT','RWSP','RCSP','CCSP','LASP','RWBL','BRBL','BRCO','BHCO')
+
+vickery_spp <- filter(species_list, species %in% c(vickery, vickery2))$species
+
+cbsd_spp <- filter(species_list, pif == "CBSD")$species
+
+yellow_spp <- filter(species_list, pif == "Watch List - Yel-D")$species
+  
+```
+
+In `r report_year` there were `r species_list %>% filter(tax_level == 'species') %>% nrow()` bird species detected during grassland surveys. There were `r n_distinct(c(grass_spp, vickery_spp))` grassland species (defined as species that either obligately or facultatively breed in grasslands, as specified by Vickery (1999) and the Partners in Flight (PIF) Avian Conservation Assessment Database) detected, `r length(cbsd_spp)` species ranked by PIF as Common Birds in Steep Decline, and `r length(yellow_spp)` species placed on the PIF Yellow Watch List D for steep declines and major threats.
+
+```{r park_table}
+kable(
+  park_summary,
+  col.names = c('Park', 'Surveys', 'Points', 'Species')) %>% 
+  kable_styling(full_width = FALSE)
+```
+
+#### Grassland species by park {.tabset}
+
+The following tables show all species designated as obligate or facultative grassland species, along with all species of concern designated by Partners in Flight. Gold-highlighted species are considered grassland obligates and light yellow highlighted species are facultative grassland species (Vickery 1999).
+
+##### ANTI
+
+Grassland species detected at Antietam National Battlefield in `r report_year`:
+```{r ANTI_species}
+species_ANTI <-
+  species_by_park %>% 
+  filter(park == 'ANTI', 
+         species %in% c(grass_spp, cbsd_spp, yellow_spp, vickery_spp)) %>% 
+  select(species, common_name, sci_name, 
+         tax_level, tax_order, detections, pif) %>% 
+  arrange(-detections, tax_order)
+
+species_ANTI %>% 
+  kable(
+    col.names = c('Alpha code', 'Common name', 'Scientific name', 
+                  'Taxonomic level', 'Taxonomic #', 'Detections', "Watchlist")) %>% 
+  kable_styling(full_width = FALSE) %>% 
+  row_spec(
+    which(species_ANTI$species %in% vickery),
+    background = 'gold') %>% 
+  row_spec(
+    which(species_ANTI$species %in% vickery2),
+    background = '#fdffc7') %>% 
+  column_spec(3, italic = TRUE) %>% 
+  column_spec(2, bold = TRUE) %>% 
+  remove_column(4:5)
+```
+
+##### HAFE
+Species of interest detected at Harpers Ferry National Historical Park in `r report_year`:
+```{r HAFE_species}
+species_HAFE <-
+  species_by_park %>% 
+  filter(park == 'HAFE', 
+         species %in% c(grass_spp, cbsd_spp, yellow_spp, vickery_spp)) %>% 
+  select(species, common_name, sci_name, 
+         tax_level, tax_order, detections, pif) %>% 
+  arrange(-detections, tax_order)
+
+species_HAFE %>% 
+  kable(
+    col.names = c('Alpha code', 'Common name', 'Scientific name', 
+                  'Taxonomic level', 'Taxonomic #', 'Detections', "Watchlist")) %>% 
+  kable_styling(full_width = FALSE) %>% 
+  row_spec(
+    which(species_HAFE$species %in% vickery),
+    background = 'gold') %>% 
+  row_spec(
+    which(species_HAFE$species %in% vickery2),
+    background = '#fdffc7') %>% 
+  column_spec(3, italic = TRUE) %>% 
+  column_spec(2, bold = TRUE) %>% 
+  remove_column(4:5)
+```
+
+##### MANA
+Species of interest detected at Manassas National Battlefield Park in `r report_year`:
+```{r MANA_species}
+species_MANA <-
+  species_by_park %>% 
+  filter(park == 'MANA', 
+         species %in% grass_spp | species %in% cbsd_spp | species %in% yellow_spp) %>% 
+  select(species, common_name, sci_name, 
+         tax_level, tax_order, detections, pif) %>% 
+  arrange(-detections, tax_order)
+
+species_MANA %>% 
+  kable(
+    col.names = c('Alpha code', 'Common name', 'Scientific name', 
+                  'Taxonomic level', 'Taxonomic #', 'Detections', "Watchlist")) %>% 
+  kable_styling(full_width = FALSE) %>% 
+  row_spec(
+    which(species_MANA$species %in% vickery),
+    background = 'gold') %>% 
+  row_spec(
+    which(species_MANA$species %in% vickery2),
+    background = '#fdffc7') %>% 
+  column_spec(3, italic = TRUE) %>% 
+  column_spec(2, bold = TRUE) %>% 
+  remove_column(4:5)
+```
+
+##### MONO
+Species of interest detected at Monocacy National Battlefield in `r report_year`:
+```{r MONO_species}
+species_MONO <-
+  species_by_park %>% 
+  filter(park == 'MONO',
+         species %in% grass_spp | species %in% cbsd_spp | species %in% yellow_spp) %>% 
+  select(species, common_name, sci_name, 
+         tax_level, tax_order, detections, pif) %>% 
+  arrange(-detections, tax_order)
+
+species_MONO %>% 
+  kable(
+    col.names = c('Alpha code', 'Common name', 'Scientific name', 
+                  'Taxonomic level', 'Taxonomic #', 'Detections', "Watchlist")) %>% 
+  kable_styling(full_width = FALSE) %>% 
+  row_spec(
+    which(species_MONO$species %in% vickery),
+    background = 'gold') %>% 
+  row_spec(
+    which(species_MONO$species %in% vickery2),
+    background = '#fdffc7') %>% 
+  column_spec(3, italic = TRUE) %>% 
+  column_spec(2, bold = TRUE) %>% 
+  remove_column(4:5)
+```
+
+### Grassland species richness by point {.tabset}
+
+```{r point_summary}
+point_sf <-
+  full_data %>% 
+    group_by(grts) %>% 
+    summarize(
+      species = length(unique(species)),
+      visits = length(unique(visit_id)),
+      mean_disturb = mean(disturbance, na.rm = TRUE)) %>% 
+    left_join(points) %>% 
+    st_as_sf(coords = c('long', 'lat'), crs = 4326)
+```
+
+The total species detected at each point in `r report_year` is mapped below. Points are outlined with the mean disturbance recorded at the point that year.
+
+```{r point_map_setup, include = FALSE}
+park_lines <-
+  st_read('data/processed/focal_parks.shp') %>% 
+    st_transform(crs = 4326) %>% 
+    st_make_valid()
+
+make_map <-
+  function(park){
+  
+  park_boundary <-
+    filter(park_lines, UNIT_CODE == park) %>% 
+    st_transform(3857)
+  
+  park_point_sf_large <-
+    filter(point_sf, park == park) %>% 
+    st_transform(3857) %>% 
+    st_buffer(dist = 125, nQuadSegs = 40)
+  
+  park_point_sf_small <-
+    filter(point_sf, park == park) %>% 
+    st_transform(3857) %>% 
+    st_buffer(dist = 100, nQuadSegs = 50)
+  
+  tmap_options(check.and.fix = TRUE)
+  
+  richness_map <- 
+    tm_basemap('Esri.WorldImagery') +
+        
+    # SAMPLING UNITS
+    tm_shape(park_boundary) +
+    tm_borders(
+      col = 'yellow',
+      lwd = 2.5) +
+    
+      tm_shape(park_point_sf_large) +
+      tm_fill(
+        col = 'mean_disturb',
+        style = 'cont',
+        palette = 'Greys',
+        id = 'point_name',
+        popup.vars = 
+          c('Point name' = 'point_name',
+            'GRTS #' = 'grts',
+            'Visits' = 'visits',
+            'Species' = 'species',
+            'Mean disturbance' = 'mean_disturb'),
+        colorNA = 'grey40',
+        textNA = 'Not surveyed',
+        clustering = FALSE) +
+    
+      tm_shape(park_point_sf_small) +
+      tm_fill(
+        col = 'species',
+        style = 'cont',
+        palette = 'magma',
+        #breaks = c(0, 10, 20, 30, 40),
+        id = 'point_name',
+        popup.vars = 
+          c('Point name' = 'point_name',
+            'GRTS #' = 'grts',
+            'Visits' = 'visits',
+            'Species' = 'species',
+            'Mean disturbance' = 'mean_disturb'),
+        colorNA = 'grey40',
+        textNA = 'Not surveyed',
+        clustering = FALSE)
+
+  tmap_leaflet(richness_map, mode = 'view')
+  }
+```
+
+#### ANTI
+
+```{r point_map_ANTI}
+make_map('ANTI')
+```
+
+#### HAFE
+
+```{r point_map_HAFE}
+make_map('HAFE')
+```
+
+#### MANA
+
+```{r point_map_MANA}
+make_map('MANA')
+```
+
+#### MONO
+
+```{r point_map_MONO}
+make_map('MONO')
+```
+
+## All-time summary
+
+This document summarizes the entire grassland bird dataset.
+
+### Monitoring effort
+
+### Survey conditions
+
+### Bird detections
+
+#### Top species by park
+
+#### Species of concern over time
+
+Occupancy of grassland species
+Abundance of grassland species
+
+
+

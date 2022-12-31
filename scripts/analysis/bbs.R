@@ -65,4 +65,6 @@ bbs %>%
     legend.position = 'none',
     axis.text.x = element_text(size = 8),
     plot.caption = element_text(size = 7, lineheight = 0.6, face = 'italic'))
+
+ggsave('output/plots/bbs_focalspp_trends.png', width = 6, height = 4, units = "in")
   
