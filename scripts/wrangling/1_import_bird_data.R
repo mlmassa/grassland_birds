@@ -1,15 +1,26 @@
 # This script should be run first.
 # It imports bird survey data and corrects errors.
-# Products: 'data/processed/birds.rds'
+# Products: 
+# "data/processed/birds.rds"
+# "data/processed/focal_parks.shp"
 
 # setup -------------------------------------------------------------------
 
+library(sf)
 library(tidyverse)
 library(lubridate)
 library(suncalc)
 
 taxonomy <-
-  read_rds('data/processed/taxonomy.rds')
+  read_rds("data/processed/taxonomy.rds")
+
+# Setup -------------------------------------------------------------------
+
+# Load NPS park boundaries
+st_write(
+  st_read("data/raw/nps_boundary.shp") %>% 
+    filter(UNIT_CODE %in% c("MANA", "HAFE", "ANTI", "MONO")),
+  "data/processed/focal_parks.shp")
 
 
 # Fix up bird data --------------------------------------------------------
@@ -19,7 +30,7 @@ birds <-
   
   # Read in raw data:
   read_csv(
-    'data/raw/NCRN_Grassland_Bird_Data_Formatted_2014_2021_FieldTypes.csv') %>%
+    "data/raw/NCRN_Grassland_Bird_Data_Formatted_2014_2021_FieldTypes.csv") %>%
   
   # Remove non-bird and irrelevant variables:
   select(
@@ -55,29 +66,29 @@ birds <-
     # Format date:
     date = mdy(date),
     # Add year variable for ease of use:
-    # I use this instead of the included 'year' variable for no reason.
+    # I use this instead of the included "year" variable for no reason.
     year = year(date),
     # Correct code mistakes
     species = 
       str_replace_all(
         string = species,
-        c('UNCH' = 'UPCH',
-          'ETTI' = 'TUTI',
-          'RODO' = 'ROPI',
-          'SASP' = 'SAVS',
-          'GRBH' = 'GBHE',
-          'UNAH' = 'UAHA')),
+        c("UNCH" = "UPCH",
+          "ETTI" = "TUTI",
+          "RODO" = "ROPI",
+          "SASP" = "SAVS",
+          "GRBH" = "GBHE",
+          "UNAH" = "UAHA")),
     # Standardize time formats
-    start_time = start_time %>% str_remove(pattern = ' AM'), 
+    start_time = start_time %>% str_remove(pattern = " AM"), 
     start_time =
       if_else(
-        str_detect(string = start_time, pattern = ':[0-9][0-9]:00$'), 
-        str_remove(string = start_time, pattern = ':00$'), 
+        str_detect(string = start_time, pattern = ":[0-9][0-9]:00$"), 
+        str_remove(string = start_time, pattern = ":00$"), 
         start_time) %>% 
-      str_c(':00')) %>% 
+      str_c(":00")) %>% 
   
     # Remove unverifiable code mistakes
-    filter(!species %in% c('CHPH', 'NOCR')) %>%
+    filter(!species %in% c("CHPH", "NOCR")) %>%
   
   # Arrange by date:
   arrange(date)
@@ -85,7 +96,7 @@ birds <-
 # Create tidy data --------------------------------------------------------
 
 # Create tidy table of points (only coords, park, point name)
-# This looks awful but don't change it. Some latlong non-distinct duplicates
+# This looks awful but don"t change it. Some latlong non-distinct duplicates
 # are ruining a simlper version.
 points <-
   birds %>% 
@@ -102,7 +113,7 @@ points <-
 # This contains only the visit/survey-level information (no birds)
 visits <-
   birds %>% 
-  filter(!observer == 'Tyler Chambers') %>% 
+  filter(!observer == "Tyler Chambers") %>% 
   select(
     visit_id, grts,
     visit, date,
@@ -122,7 +133,7 @@ visits <-
 # Create tidy table of bird counts
 counts <-
   birds %>% 
-  filter(!observer == 'Tyler Chambers') %>% 
+  filter(!observer == "Tyler Chambers") %>% 
   select(
     visit_id,
     species, 
@@ -140,7 +151,7 @@ visits <-
   visits %>% 
     select(grts, visit_id, date, start_time) %>%
     # Add coordinates of point
-    left_join(points %>% select(grts, lat, long), by = 'grts') %>% 
+    left_join(points %>% select(grts, lat, long), by = "grts") %>% 
     # Add sunrise time
     left_join(
         getSunlightTimes(
@@ -148,22 +159,22 @@ visits <-
                   select(grts, date, start_time) %>% 
                   left_join(points %>% 
                               select(grts, lat, long), 
-                            by = 'grts') %>% 
+                            by = "grts") %>% 
                   select(date, lat, lon = long),
-          keep = 'sunrise',
-          tz = 'America/New_York') %>% 
+          keep = "sunrise",
+          tz = "America/New_York") %>% 
           as_tibble(),
-        by = c('date', 'lat', 'long' = 'lon')) %>% 
+        by = c("date", "lat", "long" = "lon")) %>% 
     # Calculate time since sunrise
     mutate(
       start_dttm = (ymd(date) + hms(start_time)),
-      tz(start_dttm) <- 'America/New_York',
-      diff = difftime(start_dttm, sunrise, units = 'mins'),
+      tz(start_dttm) <- "America/New_York",
+      diff = difftime(start_dttm, sunrise, units = "mins"),
       # Convert to numeric, "minutes after sunrise"
-      start_sun = as.numeric(diff, units = 'mins')) %>% 
+      start_sun = as.numeric(diff, units = "mins")) %>% 
     # Select only calculation, then append to visits
     select(visit_id, start_sun) %>% 
-    left_join(visits, by = 'visit_id')
+    left_join(visits, by = "visit_id")
 
 # Error detection ---------------------------------------------------------
 
@@ -182,14 +193,14 @@ visits <-
 #   # Remove species with no banding code (not North American)
 #   filter(
 #     !is.na(species),
-#     !order %in% c('Tinamiformes', 'Phoenicopteriformes', 'Pterocliformes',
-#                   'Eurypygiformes', 'Phaethontiformes', 'Procellariiformes',
-#                   'Trogoniformes', 'Bucerotiformes', 'Galbuliformes', 
-#                   'Psittaciformes'))
+#     !order %in% c("Tinamiformes", "Phoenicopteriformes", "Pterocliformes",
+#                   "Eurypygiformes", "Phaethontiformes", "Procellariiformes",
+#                   "Trogoniformes", "Bucerotiformes", "Galbuliformes", 
+#                   "Psittaciformes"))
 #
 # Save taxonomy
 # taxonomy %>% 
-#   write_rds('data/processed/taxonomy.rds')
+#   write_rds("data/processed/taxonomy.rds")
 
 # Return rows where banding code does not match one in eBird taxonomy:
 birds %>% 
@@ -199,7 +210,7 @@ birds %>%
 birds %>% 
   select(species) %>% 
   count(species) %>% 
-  left_join(taxonomy, by = 'species') %>% 
+  left_join(taxonomy, by = "species") %>% 
   arrange(tax_order) %>% 
   View()
 
@@ -216,18 +227,18 @@ visits %>%
     # Fix visit number
     visit = row_number(),
     # Add visit identifier:
-    visit_id = str_c(grts, year(date), visit, sep = '-')) %>% 
+    visit_id = str_c(grts, year(date), visit, sep = "-")) %>% 
   ungroup() %>% 
   pull(visit_id) %>% unique() %>% length()
 
 
 # Save data ---------------------------------------------------------------
 
-data <- c('points', 'counts', 'visits')
+data <- c("points", "counts", "visits")
 
 write_rds(
   mget(data),
-  'data/processed/birds.rds')
+  "data/processed/birds.rds")
 
 # This can be read in using read_rds then list2env(.GlobalEnv)
 # I prefer saving and loading data as R objects because you can't 

@@ -1,6 +1,6 @@
 # This script should be run first.
 # It imports VWL bird survey data and corrects errors.
-# Products: 'data/processed/vwl_birds.rds'
+# Products: "data/processed/vwl_birds.rds"
 
 # setup -------------------------------------------------------------------
 
@@ -106,7 +106,9 @@ data <-
       if_else(
         str_detect(Time_24h, ":"),
         str_c(Time_24h, ":00"),
-        hms::as_hms(round(as.numeric(Time_24h)*24*60*60)) %>% as.character())) %>% 
+        hms::as_hms(
+          round(as.numeric(Time_24h)*24*60*60)) %>% 
+        as.character())) %>% 
   select(
     property_id = Property_ID,
     pole = Pole,

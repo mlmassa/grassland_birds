@@ -29,8 +29,6 @@ bbs <-
 
 # make graph --------------------------------------------------------------
 
-
-
 bbs %>% 
   filter(
     common_name %in% c('Grasshopper Sparrow', 
@@ -48,8 +46,10 @@ bbs %>%
                     width = 0.5)) +
   geom_hline(yintercept = 0) +
   scale_x_discrete(
-    limits = c('Survey-wide', 'Appalachian Mountains', 'Piedmont', 'Virginia', 'West Virginia', 'Maryland'),
-    labels = c('All', 'Appalachian\nMountains', 'Piedmont', 'Virginia', 'West\nVirginia', 'Maryland')) +
+    limits = c('Survey-wide', 'Appalachian Mountains', 
+               'Piedmont', 'Virginia', 'West Virginia', 'Maryland'),
+    labels = c('All', 'Appalachian\nMountains', 
+               'Piedmont', 'Virginia', 'West\nVirginia', 'Maryland')) +
   labs(x = 'Breeding Bird Survey region', 
        y = 'Annual % change\n(1966-2019) ± 95% CI', 
        title = 'Grassland species are in decline',

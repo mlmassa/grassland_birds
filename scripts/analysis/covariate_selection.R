@@ -1,7 +1,6 @@
 # This script generates a correlation matrix and
 # examines covariate reduction potentials.
 
-
 # setup -------------------------------------------------------------------
 
 library(tidyverse)
