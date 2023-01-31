@@ -78,58 +78,57 @@ theme_set(
 
 With the loss of as much as 99% of shortgrass and tallgrass prairie area in North America since 1800 [@samson1994] it is not surprising that grassland birds are the fastest-declining avian guild in North America, with population losses reported in 74% of species in the past 50 years [@rosenberg2019]. 
 Habitat modification and loss are collectively the primary driver of species endangerment [@leu2019], and these precipitous losses are attributed to conversion of grassland habitats to urbanized or forested areas, as well as changing agricultural practices that have favored intensive row crops over pasturelands [@bollinger1990; @masse2008; @hill2014]. 
-Habitat loss is compounded with degradation in grassland ecosystems when remaining pastures and hayfields are converted to grass species that create worse habitat for grassland birds [@walk2000]. 
+Habitat loss is compounded with degradation in grassland ecosystems when remaining pastures and hayfields are converted to grass species that reduce grassland bird habitat quality [@walk2000]. 
 In addition to changing crop species, agricultural intensification can lead to earlier and more frequent harvests, which leave grassland-breeding birds without habitat during crucial reproductive periods or in ecological traps where harvests destroy nests prior to fledging [@bollinger1990; @rodenhouse1995; @masse2008; @allen2019].
 These management decisions, made in the interest of agricultural production, can drive grassland bird populations at a regional scale [@allen2021].
 
 <!-- EASTERN CONTEXTS FOR DECLINE -->
-Declines of grassland birds in the past half-century have been particularly rapid in eastern North America [@sauer2017]. 
-<!-- EBC: 2022 State of the Birds report? -->
+Grassland bird declines in the past half-century have been particularly rapid in eastern North America [@sauer2017]. 
 Because of this, there has been considerable work to understand habitat needs and make management recommendations for grassland birds (reviewed in [@dechant2002; @hull2002]. 
 However, the majority of this work has taken place in the shortgrass and tallgrass prairie of the central, midwestern, and western regions, while populations in the east differ in historical context and thus may differ in their habitat and management needs.
+<!-- EBC: Add references -->
 Historical accounts and the existence of distinct eastern subpopulations suggest the long-term persistence of eastern grassland bird species in habitat patches that were embedded in a forested landscape, maintained prior to European colonization by Native American land management alongside natural disturbance patterns [@askins1999]. 
 The initial deforestation of eastern North America by Europeans may have then created and expanded grassland habitats, leading to population increases or range expansions of grassland bird species that were harmed by the conversion of Midwest prairies to agriculture [@brennan2005; @mccracken2005]. 
 Subsequent regrowth of eastern forests following historical deforestation, while positive for some forest species, has been associated with reduced habitat and population declines for grassland species.
 Although there has been research on these species in the east e.g. [@warren2005; @irvin2013], particularly on reclaimed strip mines [@wray1982; @hill2013], there is still a need to identify the drivers of occurrence in the east and the relationships to specific management activities in this region.
 
-
 Conservation and management of eastern grasslands for declining bird species relies on the management of both public and private land, but private land has major limitations that public lands may be able to overcome.
-A large majority of land (~85%) in the east is privately-owned [@rasker2019],
+A large majority of land (approximately 85%) in the east is privately-owned [@rasker2019],
 <!-- (Better source? Relying on a website summarizing a USGS dataset.) -->
-and although a variety of conservation programs exist to conserve grasslands on  private lands, the need for agricultural income can outweigh landowner desire to participate in conservation-focused land management [@morton2010, @atwood2017].
-For example, a common conflict is related to harvest timing; nutrient quality is higher in earlier-harvested hay [@brown2017], which encourages early and more frequent harvests, while fields with delayed and reduced harvests produce more grassland bird fledglings [@perlut2006]. 
+and although there exist a variety of programs that can protect or augment grassland habitat on private lands, such as the Conservation Reserve Program, Conservation Stewardship Program, and Agricultural Conservation Easement Program, the need for agricultural income can outweigh landowner desire to participate in conservation-focused land management [@morton2010, @atwood2017].
+For example, harvest timing is a common conflict in grassland bird management. Nutrient quality is higher in earlier-harvested hay [@brown2017], which encourages early and more frequent harvests, but fields with delayed and reduced harvests produce more grassland bird fledglings [@perlut2006]. 
 Efforts to encourage suitable habitat for grassland birds on working lands have seen success when landowners are using properties to grow hay or as pasture rather than industrial agriculture or row-cropped land [@west2016; @johnson2017; @gruntorad2021].
 Furthermore, conversion of privately-owned grassland habitat to cropland is considered a threat to grassland species as the climate changes because of the further fragmentation of the landscape and loss of ecosystem services [@grand2019].
 Conversely, public lands (such as national and state parks and national forests and grasslands) can consist of relatively large, contiguous areas where land is protected from conversion to highly degrading uses or development, thereby protecting biodiversity, particularly for area-sensitive species [@weidman2011].
 Several studies have quantified the value of protected public lands for wildlife conservation, in particular because they are dedicated to a common goal and can safeguard species that are declining in the surrounding landscape [@palomo2014; @dettling2021].
 While they are not as prevalent in total extent as private lands, public lands may provide a disproportionately valuable opportunity for the conservation of grassland bird populations.
 
-Public lands managed by the U.S. National Park Service (NPS) host a diverse array of bird species, including several species that are in decline and of conservation concern [@dettling2021; @ladin2013]. 
+Public lands managed by the U.S. National Park Service (NPS) host a diverse array of bird species, including several species that are in decline and of conservation concern [@dettling2021; @ladin2021]. 
 In the NPS National Capital Region, which encompasses Maryland, the District of Columbia, and portions of Virginia and West Virginia, there are several civil war battlefield parks that may provide habitat for grassland birds within the increasingly urbanized matrix in this region, which has seen over a 30% increase in impervious cover since 1984 [@sexton2013].
-These parks are maintained as open grasslands to replicate their historical appearance for use as cultural landmarks and in historical interpretation [@nationalparkservice2014], even as urbanization continues around them. 
-However, the effectiveness of these parks as habitat for grassland species in an urbanizing landscape is not known. 
-Bird populations are often seen as indicators of the health of natural resources in the parks, with bird populations trends potential changes in the ecological resources managed by NPS along with ramifications for visitor experiences [@nationalparkservice2005]. 
+These cultural parks maintain substantial open grassland areas to replicate their historical appearance for use as cultural landscapes and in historical interpretation [@nationalparkservice2014], even as urbanization continues around them. 
+However, the effectiveness of these parks as habitat for grassland species in an urbanizing landscape is poorly understood. 
+Bird populations have been used as indicators of natural resource health in the parks [@ladin2016; @goodwin2014], with population trends indicating potential changes in resource condition along with ramifications for visitor experiences [@nationalparkservice2005]. 
 <!-- CEN: Explain what you mean by this. Are people visiting these types of parks for the birds? Provide sources, if any, on how bird presence enhances public experience -->
-Further, park managers require long-term scientific data and sound analyses to identify the best management practices of their resources. 
-The NPS Inventory and Monitoring Program collects ecological data to assess the condition and changes in NPS natural resources over time to support scientific resource management decision-making [@fancy2009]. 
-The NPS Inventory and Monitoring Program has collected forest bird occurrence and abundance data in the National Capital Region since 2005 [@nationalparkservice2005] and more recently in 2014 began long-term population monitoring for grassland birds.
-While previous analyses have focused on interior forest birds in National Parks [@ladin2013], little insight exists into the status of grassland birds in parks of this region.
+Further, park managers require long-term scientific data and sound analyses to identify the best resource management practices. 
+The NPS Inventory and Monitoring Program (NPS I&M) collects ecological data to assess the condition and changes in NPS natural resources over time to support scientific resource management decision-making [@fancy2009]. 
+The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
+While previous analyses have focused on interior forest birds in National Parks [@ladin2021], little insight exists into the status of grassland birds in parks of this region.
 
-To better understand how local habitat and management factors, along with the surrounding landscape, impact grassland bird populations in National Battlefield Parks in the National Capital Region, we used six years of NPS Inventory and Monitoring data in four parks to model occupancy of two declining grassland bird species [@partnersinflight2021].
-In particular, our objective was to identify the role of specific management activities within these parks on the occupancy of these species as reflective of grassland bird populations in general.
-We predicted that park management activities, particularly the use of prescribed fire and the restriction of harvest and mowing times, would increase occupancy for grassland species relative to the absence of management.
+To better understand how local habitat and management factors, along with the surrounding landscape, impact grassland bird populations in National Battlefield Parks in the National Capital Region, we used six years of NPS I&M data in four parks to model occupancy of two declining grassland bird species [@partnersinflight2021].
+In particular, our objective was to identify the role of specific management activities, local habitat features, and surrounding land cover on the occupancy of these species.
+We predicted that park management activities, particularly the use of prescribed fire and the restriction of harvest and mowing times, would increase occupancy for grassland species relative to the absence of management, and that
 Although grassland birds have not been monitored as long as forest birds in this region, early indicators of temporal patterns in occupancy can further inform management priorities. We predicted that, in concert with their regional trends, there would be a decline in occupancy during the study period. 
 These trends may be influenced by features of the surrounding landscape that are beyond the scope of park control and provide context to NPS management of grassland birds.
 
 # Study area
 
 The four parks included in this study were historical battlefields located within the NPS National Capital Region, which surrounds Washington, D.C. (Figure \@ref(fig:map)). 
-Antietam National Battlefield (hereafter Antietam), Harpers Ferry National Historical Park (Harpers Ferry), Manassas National Battlefield Park (Manassas), and Monocacy National Battlefield (Monocacy) consist primarily of open areas maintained to replicate their historical appearance for use as cultural landmarks and in historical interpretation. Each of the parks has an independent management team and historical objectives [@nationalparkservice2013; @nationalparkservice2014; @nationalparkservice2015; @nationalparkservice2016]. 
-The parks vary in their geographic context as well as in size and proportion of area managed as grasslands. Antietam has the highest proportion of grasslands (size: 13.8 km^2^; grassland: 48.5%) followed by Manassas which is also the largest of the four parks (21.5 km^2^, 39.1%).
+Antietam National Battlefield (hereafter Antietam), Harpers Ferry National Historical Park (Harpers Ferry), Manassas National Battlefield Park (Manassas), and Monocacy National Battlefield (Monocacy) consist of a mix of forested and open areas maintained to reflect their historical appearance during the Civil War. Each of the parks has an independent management team and historical objectives [@nationalparkservice2013; @nationalparkservice2014; @nationalparkservice2015; @nationalparkservice2016]. 
+The parks vary in their geographic context as well as in size and proportion of area managed as grasslands. Antietam has the greatest proportion of grasslands (size: 13.8 km^2^; grassland: 48.5%) followed by Manassas which is also the largest of the four parks (21.5 km^2^, 39.1%).
 Harpers Ferry is similar in size to Antietam but contains less grassland (15.7 km^2^, 13.7%), and Monocacy is the smallest of the four parks with a moderate amount of grassland (6.9 km^2^, 25.7%).
 Most parks are in close proximity to an urbanized area (Figure \@ref(fig:map)), most notably Frederick, MD (Monocacy) and the greater Washington, D.C. area (Manassas).
 
-A variety of approaches are employed to manage the land in these parks. 
+A variety of land-management approaches are employed in these parks. 
 Prescribed fire is used to manage grassland habitat in all parks except Harpers Ferry, though the extent of burned area is limited to certain sub-units within the parks and only occasionally overlapped the sites in this study [@npsfire].
 Non-forested areas within these parks are managed by both the parks and private entities through agricultural lease programs in place to maintain the agricultural history of the parks as working lands [@nationalparkservice2020].
 Lease terms are set by the individual parks, but the leased fields are managed by the private entities awarded the lease and are typically farmed for hay or row crops, primarily corn [@npslease].
@@ -138,7 +137,7 @@ Lease terms are set by the individual parks, but the leased fields are managed b
 <br>
 
 <!-- CEN: I like the colors of the inset map, but the gray-shading of the base map is counter-intuitive (i.e., developed areas are usually depicted as lighter and park lands/natural areas are darker.) Suggest inverting the grayscale of the background if possible.  -->
-```{r map, fig.cap = 'Map of battlefield parks in the National Park Service (NPS) National Capital Region where grassland bird populations were monitored from 2014-2021. Urbanized areas are shown in darker gray. National Capital Region (red box) and other NPS regions are shown in the inset map.'}
+```{r map, fig.cap = 'Map of the four battlefield parks in the National Park Service (NPS) National Capital Region where grassland bird populations were monitored from 2014-2021. Urbanized areas are shown in darker gray. National Capital Region (red box) and other NPS regions are shown in the inset map.'}
 # Show NPS map. Generated in scripts/analysis/map_parks.R; Illustrator mods needed
 knitr::include_graphics('output/plots/inset_map_reverse_edited.jpg')
 ```
@@ -148,14 +147,14 @@ knitr::include_graphics('output/plots/inset_map_reverse_edited.jpg')
 
 ## Bird surveys
 
-The NPS National Capital Region Inventory and Monitoring program conducted point count surveys from 2016-2019 and in 2021 at Harpers Ferry with an additional year (2015) at Antietam and Monocacy and two additional years (2014-2015) at Manassas; no parks were surveyed in 2020. 
-A total of 242 sites were surveyed across all four parks in accordance with the National Capital Region avian monitoring protocol [@dawson2013]. 
-Sites were distributed in a spatially-balanced Generalized Random Tessellation-Stratified scheme [@stevens2004], separated by at least 250 meters.
-The same sites were surveyed across years, at least twice per breeding season, May through July.
+The NPS National Capital Region I&M conducted point count surveys at Manassas (2014-2019; 2021), Antietam and Monocacy (2015-2019; 2021), and Harpers Ferry (2016-2019; 2021); no parks were surveyed in 2020 due to the Covid-19 pandemic.
+Trained field crews surveyed at 242 points across all four parks in accordance with the National Capital Region avian monitoring protocol [@dawson2013]. 
+Points were distributed in a spatially-balanced Generalized Random Tessellation-Stratified scheme [@stevens2004], separated by at least 250 meters.
+The same points were surveyed across years, with at least two visits per breeding season separated by at least 10 days, 7 May through 26 July.
 Each single-observer 10-minute survey was divided into four 2.5-minute intervals and three distance bands (0-25m, 26-50m, and 50-100m), excluding any individuals that were detected outside the maximum 100m radius.
 
 We measured environmental conditions with the potential to impact detection during each survey including disturbance, wind, temperature, and humidity, along with day of year, time, and observer identity (Table \@ref(tab:detcovs)). 
-Disturbance was a subjective assessment by the observer that accounted for the volume of traffic noise ranging from no effect to extreme effect on count. 
+Disturbance was a subjective assessment by the observer that accounted for the ambient noise ranging from no effect to extreme effect on count. 
 Wind was recorded in five categories using the Beaufort scale (Table \@ref(tab:detcovs)). Temperature and humidity were recorded using a hygrometer. 
 The time of each survey in minutes after local sunrise was calculated using the R package "suncalc" [@thiermel2019].
 
@@ -289,21 +288,21 @@ read_rds('data/processed/birds.rds') %>%
 
 ```{r landcover, fig.cap = 'Mean percent cover of four landcover types surrounding surveyed sites in National Capital Region battlefield parks at three spatial scales.', dpi = 300, fig.width = 6.5, fig.height = 5}
 # Point covariates import
-read_rds('data/processed/static_point_covs2.rds') %>%
-  mutate(grts = as.numeric(grts)) %>%
-  left_join(points) %>%
-  pivot_longer(cols = grs_500m:wet_5km,
-               names_to = 'variable',
-               values_to = 'value') %>%
-  select(grts, park, variable, value) %>%
-  # SPLIT VARIABLES INTO TYPE OF LANDCOVER AND SCALE:
+read_rds('data/processed/static_covs.rds') %>%
+  pivot_longer(
+    cols = crp_250:grs_5000, 
+    names_to = "variable", 
+    values_to = "value") %>% 
+  select(grts, park, variable, value) %>% 
   mutate(
     value = value * 100,
-    scale = str_extract(string = variable, pattern = '[0-9]+[a-z]+') %>%
-      factor(levels = c('500m', '1km', '5km')),
-    landcover = str_extract(string = variable, pattern = '[a-z][a-z][a-z]') %>%
-      factor(labels = c('Developed', 'Forest',
-                        'Grassland', 'Wetland'))) %>%
+    scale = readr::parse_number(variable),
+    landcover = 
+      str_extract(
+        string = variable, 
+        pattern = '[a-z][a-z][a-z]') %>% 
+      factor(
+        labels = c("Cropland", "Developed", "Forest", "Grassland"))) %>% 
   # Add short full park names
   mutate(
     park_name = 
@@ -315,7 +314,7 @@ read_rds('data/processed/static_point_covs2.rds') %>%
   ggplot(aes(x = landcover, y = value)) +
   #geom_violin(aes(fill = park_name, color = park_name), scale = 'width') +
   geom_jitter(aes(color = landcover), alpha = 0.7, width = 0.3) +
-    scale_color_manual(values = c('#ff8080', '#00b359', '#ECE30A', '#6EB1EC')) +
+    scale_color_manual(values = c("#CA9146", "#B50000", "#85C77E", "#FBF65D")) +
   geom_boxplot(fill = NA, outlier.shape = NA) +
   facet_grid(rows = vars(scale), cols = vars(park_name)) +
   labs(x = '', y = 'Percent landcover') +
@@ -976,7 +975,7 @@ In the densely-populated and developed region surrounding the nation's capital, 
 
 # Acknowledgments
 
-We thank YOU, the reader, for providing comments on this draft. We thank the numerous technicians who completed bird surveys for the Inventory and Monitoring Program. This study was funded by the National Park Service. J. P. Schmit assisted with the statistical approach.
+We thank YOU, the reader, for providing comments on this draft. We thank the numerous technicians who completed bird surveys for the NPS I&M. This study was funded by the National Park Service. J. P. Schmit assisted with the statistical approach.
 
 # Ethics statement
 

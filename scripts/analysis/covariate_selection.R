@@ -7,16 +7,11 @@ library(tidyverse)
 library(sf)
 
 # Import data
-annual_harvest <- 
-  read_rds('data/processed/annual_harvest_covs.rds')
-
-annual_burn <-
-  read_rds('data/processed/annual_burn_covs.rds')
+annual_covs <- 
+  read_rds('data/processed/annual_covs.rds')
 
 static_covs <-
-  read_rds('data/processed/static_point_covs2.rds') %>% 
-  select(-Park) %>% 
-  filter(field_type != 'Forest')
+  read_rds('data/processed/static_covs.rds') 
 
 read_rds('data/processed/birds.rds') %>% 
   list2env(.GlobalEnv)
@@ -25,54 +20,12 @@ read_rds('data/processed/birds.rds') %>%
 # Hist of all -------------------------------------------------------------
 
 static_covs %>% 
-  # Add park
-  left_join(
-    points %>% mutate(grts = as.character(grts)) %>% select(grts, park),
-    by = 'grts') %>% 
-  select(!field_type) %>% 
+  select(where(is.numeric)) %>% 
   pivot_longer(
-    cols = c(2:20),
+    cols = c(2:length(.)),
     names_to = 'variable') %>% 
-  filter(!variable %in% 
-           c('ever_burned', 
-              'harvest_limit', 
-              'leased')) %>%
-  mutate(variable = 
-           factor(variable, 
-                  levels = c(
-                             'clin_max',
-                             'clin_mean',
-                             'dvp_500m',
-                             'dvp_1km',
-                             'dvp_5km',
-                             'for_500m',
-                             'for_1km',
-                             'for_5km',
-                             'grs_500m',
-                             'grs_1km',
-                             'grs_5km',
-                             'wet_500m',
-                             'wet_1km',
-                             'wet_5km',
-                             'shrub_mean',
-                             'trees'), 
-                  labels = c(
-                           'Angle to horizon (max)',
-                           'Angle to horizon (mean)',
-                           'Developed land (500m)',
-                           'Developed land (1km)',
-                           'Developed land (5km)',
-                           'Forested land (500m)',
-                           'Forested land (1km)',
-                           'Forested land (5km)',
-                           'Grassland (500m)',
-                           'Grassland (1km)',
-                           'Grassland (5km)',
-                           'Wetland (500m)',
-                           'Wetland (1km)',
-                           'Wetland (5km)',
-                           '% Shrub within 100m',
-                           '# Trees within 100m'))) %>% 
+  left_join(static_covs %>% select(grts, park)) %>% 
+
   
 ggplot(
   aes(x = value,
@@ -83,7 +36,7 @@ ggplot(
        y = 'Density', 
        title = 'Density plot of habitat covariates by park',
        color = 'Park') +
-  facet_wrap(~variable, ncol = 2, scales = 'free') +
+  facet_wrap(~variable, ncol = 3, scales = 'free') +
   theme(axis.title = element_text(size = 12),
         plot.title = element_text(size = 14),
         axis.text.x = element_text(size = 10),
@@ -94,8 +47,7 @@ ggplot(
         panel.grid.major.x = element_blank(),
         axis.line = element_line(color = 'black'),
         axis.ticks.y = element_blank(),
-        strip.background = element_rect(color = 'black', fill = 'black'),
-        strip.text = element_text(size = 10, color = 'white')) 
+        strip.background = element_blank()) 
 
 
 # Export plot
@@ -122,7 +74,7 @@ corr_table <-
   static_covs %>% 
   select(order(colnames(static_covs))) %>% 
   select(where(is.numeric)) %>% 
-  select(-c(ever_burned, harvest_limit, leased)) %>% 
+  select(-c(grts, ever_burned, harvest_limit, leased)) %>% 
   
   # Run correlation
   cor(
@@ -136,7 +88,7 @@ corr_table <-
   
   # Transform to long tibble with var1, var2, value
   pivot_longer(
-    2:17,
+    2:length(.),
     names_to = 'var2') %>% 
   filter(!is.na(value))
 
@@ -144,11 +96,9 @@ corr_table <-
 # Show most highly correlated variables
 corr_table %>% 
   filter(value != 1,
-         abs(value) >= 0.7) %>% 
-  arrange(-abs(value))
-
-
-
+         abs(value) >= 0.6) %>% 
+  arrange(-abs(value)) %>% 
+  print(n = nrow(.))
 
 # Basic triangle plot
 plot <-
@@ -198,6 +148,8 @@ labeled_corr_plot <-
           title.position = "top", 
           title.hjust = 0.5))
 
+labeled_corr_plot
+
 # Explort plot
 ggsave(
   filename = 'corr_matrix_update.png',
@@ -206,22 +158,7 @@ ggsave(
     height = 5,
     units = 'in')
 
-
-
-
-  
-  
 # Random other plots ------------------------------------------------------
 static_covs %>% 
-  ggplot(aes(x = for_500m, y = for_1km)) +
+  ggplot(aes(x = for_500, y = crp_1000)) +
   geom_point()
-
-corr_table %>% 
-  filter(
-    str_detect(var1, '5'),
-    str_detect(var2, '5'),
-    value != 1) %>% 
-  arrange(abs(value))
-
-#5km: grass and forest, OR development. Both are neg corr with it.
-#Use 500m instead of 1km. More local. All are OK.

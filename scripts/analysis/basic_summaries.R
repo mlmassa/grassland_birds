@@ -16,7 +16,7 @@ taxonomy <-
   read_rds('data/processed/taxonomy.rds')
 
 pif_stats <-
-read_csv('data/raw/ACAD Global 2021.02.05-filtered.csv') %>%
+  read_csv('data/raw/ACAD Global 2021.02.05-filtered.csv') %>%
   select(
     common_name = `Common Name`,
     global_pop = `Global Pop Size#`,
@@ -26,17 +26,14 @@ read_csv('data/raw/ACAD Global 2021.02.05-filtered.csv') %>%
     hab_breeding = `Primary Breeding Habitat`,
     watchlist = CI)
 
-read_csv('data/raw/ACAD Regional 2021.03.21-filtered.csv')
+
 # Import covariate data
 
-point_covs <-
-  read_rds('data/processed/static_point_covs2.rds')
+static_covs <-
+  read_rds('data/processed/static_covs.rds')
 
-burn_covs <- 
-  read_rds('data/processed/annual_burn_covs.rds')
-
-harvest_covs <-
-  read_rds('data/processed/annual_harvest_covs.rds')
+annual_covs <- 
+  read_rds('data/processed/annual_covs.rds')
 
 
 # Build untidy bird data
@@ -54,18 +51,11 @@ parks <-
   st_read('data/processed/focal_parks.shp') %>% 
   select(
     park = UNIT_CODE,
-    park_name = UNIT_NAME)
-
-
-# Import taxonomy
-
- # taxonomy <- 
- #   read_rds('data/processed/taxonomy.rds')
-
+    park_name = PARKNAME)
 
 # Set focal species
-focal_species <-
-  c('GRSP', 'FISP', 'RWBL', 'EAME')
+focal_spp <- 
+  c('GRSP', 'EAME')
 
 
 # Calculate annual totals -------------------------------------------------
@@ -91,7 +81,7 @@ annual_props <-
 
 # Plot mean prop points
 annual_props %>% 
-  filter(species %in% focal_species) %>% 
+  filter(species %in% focal_spp) %>% 
   group_by(park, species) %>% 
   summarize(mean_prop_points = mean(prop_points)) %>% 
   ggplot(aes(x = park, 
@@ -100,7 +90,7 @@ annual_props %>%
   geom_col(position = 'dodge',
            color = 'black') +
   #scale_fill_manual(values = c('goldenrod', 'pink', 'green', 'black')) +
-  scale_fill_brewer(palette = 10) +
+  scale_fill_brewer(palette = "Greys") +
   labs(y = 'Mean proportion\nof sites occupied',
        x = 'Park',
        fill = 'Species') +
@@ -141,7 +131,6 @@ counts %>%
 
 # Show annual variables (ex. disurb) --------------------------------------
 
-
 counts %>% 
   group_by(visit_id) %>% 
   summarize(
@@ -159,7 +148,6 @@ counts %>%
   ggplot(aes(x=year, y = mean_disturb, color = park)) +
   geom_point() + geom_line()
 
-
 # Get species over the season ---------------------------------------------
 
 counts %>% 
@@ -175,8 +163,6 @@ counts %>%
   geom_jitter() +
   geom_smooth(method = lm)
   
-  
-
 # Plot mean abundance by park ---------------------------------------------
 
 #abundance_park_plot <-
@@ -335,65 +321,36 @@ write_rds(plot_annual_detections, 'output/plots/plot_annual_detections.rds')
 
 
 # Landscape covariates by park --------------------------------------------
-point_covs %>% 
-  mutate(grts = as.numeric(grts)) %>% 
-  left_join(points) %>% 
-  pivot_longer(cols = grs_500m:wet_5km, 
-               names_to = 'variable', 
-               values_to = 'value') %>% 
-  select(grts, park, variable, value) %>% 
-  group_by(park, variable) %>% 
-  summarize(
-   mean = mean(value),
-   se = sd(value)/sqrt(length(value))) %>% 
-  mutate(upper_se = mean + se,
-         lower_se = mean - se) %>% 
-  ggplot(aes(x = variable, y = mean, 
-             color = park, 
-             ymin = lower_se, ymax = upper_se)) +
-  geom_point() +
-  geom_errorbar() +
-  coord_flip()
-
-split_point_covs <-
-point_covs %>% 
-  mutate(grts = as.numeric(grts)) %>% 
-  left_join(points) %>% 
-  pivot_longer(cols = grs_500m:wet_5km, 
-               names_to = 'variable', 
-               values_to = 'value') %>% 
+land_covs <-
+  static_covs %>% 
+  pivot_longer(
+    cols = crp_250:grs_5000, 
+    names_to = "variable", 
+    values_to = "value") %>% 
   select(grts, park, variable, value) %>% 
   mutate(
     value = value * 100,
-    scale = str_extract(string = variable, 
-                        pattern = '[0-9]+[a-z]+') %>% 
-      factor(levels = c('500m', '1km', '5km')),
-    landcover = str_extract(string = variable, 
-                            pattern = '[a-z][a-z][a-z]') %>% 
-      factor(labels = c('Developed', 'Forest', 
-                        'Grassland', 'Wetland')))
-
+    scale = readr::parse_number(variable),
+    landcover = 
+      str_extract(
+        string = variable, 
+        pattern = '[a-z][a-z][a-z]') %>% 
+      factor(
+        labels = c("Cropland", "Developed", "Forest", "Grassland")))
 
 # Anova of park landcovers ------------------------------------------------
 
-
-
-split_point_covs %>%
-  mutate(
-    park_name = case_when(park == 'ANTI' ~ 'Antietam', 
-                          park == 'HAFE' ~ 'Harpers\nFerry', 
-                          park == 'MANA' ~ 'Manassas',
-                          park == 'MONO' ~ 'Monocacy')) %>% 
-  ggplot(aes(x = park_name, y = value)) +
-  #geom_violin(aes(fill = park_name, color = park_name), scale = 'width') +
-  geom_jitter(aes(color = park_name), alpha = 0.7, width = 0.3) +
+land_covs %>% 
+  left_join(st_drop_geometry(parks)) %>% 
+  ggplot(aes(x = landcover, y = value)) +
+  geom_jitter(aes(color = landcover), alpha = 0.8, width = 0.3) +
   geom_boxplot(fill = NA, outlier.shape = NA) +
-  facet_grid(rows = vars(landcover), cols = vars(scale)) +
-  labs(x = '', y = 'Percent landcover') +
+  facet_grid(rows = vars(scale), cols = vars(park_name)) +
+  labs(y = 'Percent landcover') +
   theme_bw() +
-  theme(legend.position = 'none',
-        axis.text.x = element_text(size = 7)
-        )
+  theme(
+    legend.position = 'none',
+    axis.text.x = element_text(size = 7))
 
 ggsave('output/plots/plot_landcoverxscalexpark.png', width = 7, height = 8, units = 'in')
 
