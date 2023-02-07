@@ -357,14 +357,13 @@ ggsave('output/plots/plot_landcoverxscalexpark.png', width = 7, height = 8, unit
 # Plot field type by park -------------------------------------------------
 
 field_type_plot <-
-  point_covs %>% 
-    filter(!is.na(field_type), 
-           field_type != 'Woods') %>% 
+  static_covs %>% 
     ggplot(
-      aes(x = Park, 
-          fill = field_type)) +
+      aes(x = park, 
+          fill = habitat)) +
     scale_fill_discrete(
-      type = c('#BFE3B6', '#63AB60', '#334D2E')) +
+      type = c("#CA9146", "gold", "#D1D182", "gray", "#FDE9AA", "gold3")) +
+
     geom_bar(position = 'stack') +
     labs(
       y = 'Number of points', 
@@ -402,10 +401,8 @@ ggsave(field_type_plot,
 
 
 # Table of field type totals: pretty equal overall
-point_covs %>% 
-  filter(!is.na(field_type), 
-         field_type != 'Woods') %>% 
-  group_by(field_type) %>% 
+static_covs %>% 
+  group_by(park, habitat) %>% 
   summarize(count = n())
 
 
@@ -451,23 +448,24 @@ summary_table_detections <-
       `Mean (SE)` = paste0(signif(mean, 3), ' (', signif(se, 3), ')')) %>% 
     select(`Detection variables` = var, Range, `Mean (SE)`)
 
-point_covs %>% 
+static_covs %>% 
   mutate(
-    across(4:15, ~ .x*100)) %>% 
-  group_by(Park) %>%
+    across(c(11:30), ~ .x*100)) %>% 
+  group_by(park) %>%
   summarize(
     across(where(is.numeric),
       list(mean = ~signif(mean(.x, na.rm = TRUE),3),
-           se = ~signif(sd(.x, na.rm = TRUE)/sqrt(length(.x)), 3)),
+           se = ~round(sd(.x, na.rm = TRUE)/sqrt(length(.x)), 2)),
            .names = '{.col}ww{.fn}')) %>% 
-  pivot_longer(!Park,
+  pivot_longer(!park,
                names_to = c('var', 'metric'),
                names_sep = 'ww') %>% 
   pivot_wider(names_from = metric, values_from = value) %>% 
   mutate(concat = paste0(mean, ' (', se, ')')) %>% 
   filter(!var %in% c('ever_burned', 'trees', 'clin_mean', 'leased', 'harvest_limit')) %>% 
-  select(Park, var, concat) %>% 
-  pivot_wider(names_from = Park, values_from = concat)
+  select(park, var, concat) %>% 
+  pivot_wider(names_from = park, values_from = concat) %>% 
+  View()
 
 
 point_covs %>% group_by(Park, field_type) %>% summarize(n = n())
