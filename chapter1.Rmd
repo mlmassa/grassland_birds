@@ -7,7 +7,6 @@ author:
   - Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
     # - Thomas L. Serfass, Frostburg State University, 101 Braddock Road, Frostburg, MD 21532, USA
     # - Amy E. M. Johnson, Smithsonian Conservation Biology Institute, 1500 Remount Road, Front Royal, VA 22630, USA
-    # - Hannah Redmond, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
   - Elizabeth R. Matthews, National Park Service, 1100 Ohio Drive SW, Washington, DC 20242, USA
   - W. Gregory Shriver, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
   - Emily B. Cohen, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
@@ -184,11 +183,11 @@ eame.csghay.se <-
     round(2)
 
 eame.pasture.psi <-
-filter(
-  pred, 
-  species == 'EAME', 
-  model == 'pred.psi_habitat', 
-  habitat == 'CSG pasture')$Predicted %>% 
+  filter(
+    pred, 
+    species == 'EAME', 
+    model == 'pred.psi_habitat', 
+    habitat == 'CSG pasture')$Predicted %>% 
   round(2)
 
 eame.pasture.se <-
@@ -431,10 +430,9 @@ Following this deforestation, subsequent regrowth of eastern forests, while posi
 Although there has been research on these species in the east (e.g. [@warren2005; @irvin2013; @wray1982; @hill2013], there is a continued need to identify the drivers of occurrence in the east and the relationships to specific management activities in this region amid ongoing declines.
 
 Conservation and management of eastern grasslands for declining bird species relies on the management of both public and private land, but private land has major limitations that public lands may be able to overcome.
-A large majority of land (approximately 85%) in the east is privately-owned [@rasker2019],
+A large majority of land (approximately 85%) in the east is privately-owned [@rasker2019], and the conversion of privately-owned grasslands to intensively farmed agricultural use is considered a major threat to grassland birds in a changing climate [@grand2019].
 <!-- (Better source? Relying on a website summarizing a USGS dataset.) -->
-and a variety of programs focus on the protection and improvement of grassland habitat on private lands, including the Conservation Reserve Program, Conservation Stewardship Program, and Agricultural Conservation Easement Program.
-Still, the need for agricultural income can outweigh landowner desire to participate in conservation-focused land management [@morton2010; @atwood2017].
+Although there are a variety of programs focus on the protection and improvement of grassland habitat on private lands, including the Conservation Reserve Program, Conservation Stewardship Program, and Agricultural Conservation Easement Program, the need for agricultural income can outweigh landowner desire to participate in conservation-focused land management [@morton2010; @atwood2017].
 <!-- The conversion privately-owned grasslands to intensively farmed agricultural use is a major threat to grassland birds [@grand2019]. -->
 For example, harvest timing is a common conflict in grassland bird management. 
 Nutrient quality is higher in earlier-harvested hay [@brown2017], which encourages early and more frequent harvests, but fields with delayed and reduced harvests produce more grassland bird fledglings [@perlut2006]. 
@@ -445,7 +443,7 @@ While they are not as prevalent in total extent as private lands, public lands m
 
 Public lands managed by the U.S. National Park Service (NPS) host a diverse array of bird species, including several species that are in decline and of conservation concern [@dettling2021; @ladin2021]. 
 In the NPS National Capital Region, which encompasses Maryland, the District of Columbia, and portions of Virginia and West Virginia (Figure \@ref(fig:map)), there are several civil war battlefield parks that may provide habitat for grassland birds within the increasingly urbanized matrix in this region, which has seen over a 30% increase in impervious cover since 1984 [@sexton2013].
-These cultural parks maintain substantial open grassland areas to replicate their historical appearance for use as cultural landscapes and in historical interpretation [@nationalparkservice2014], even as urbanization continues around them. 
+These cultural parks maintain substantial open grassland areas to replicate their historical appearance for use as cultural landscapes and in historical interpretation [@mana], even as urbanization continues around them. 
 However, the effectiveness of these parks as habitat for grassland species in an urbanizing landscape is poorly understood. 
 Bird populations have been used as indicators of natural resource health in the parks [@ladin2016; @goodwin2014], with population trends indicating potential changes in resource condition along with ramifications for visitor experiences [@nationalparkservice2005]. 
 Further, park managers require long-term scientific data and sound analyses to identify the best resource management practices. 
@@ -467,7 +465,7 @@ We predicted that a safeguarding effect of public lands would cause grassland bi
 
 The four parks included in this study were historical battlefields located within the NPS National Capital Region, which surrounds Washington, D.C. (Figure \@ref(fig:map)). 
 Antietam National Battlefield (hereafter Antietam), Harpers Ferry National Historical Park (Harpers Ferry), Manassas National Battlefield Park (Manassas), and Monocacy National Battlefield (Monocacy) consist of a mix of forested and open areas maintained to reflect their historical appearance during the Civil War. 
-Each of the parks has an independent management team and unique historical objectives [@nationalparkservice2013; @nationalparkservice2014; @nationalparkservice2015; @nationalparkservice2016]. 
+Each of the parks has an independent management team and unique historical objectives [@anti; @mana; @mono; @hafe]. 
 The parks vary in their geographic context, size, and proportion of area managed as grasslands. 
 Antietam has an area of 13.8 km^2^ and the greatest proportion of grasslands (48.5%) followed by Manassas which is also the largest of the four parks (area 21.5 km^2^, 39.1% grassland).
 Harpers Ferry is similar in size to Antietam (15.7 km^2^) but with the least grassland proportionally (13.7%), and Monocacy is the smallest of the four parks with a moderate amount of grassland (area 6.9 km^2^, 25.7% grassland).
@@ -571,36 +569,36 @@ The total number of grassland- and agricultural-breeding species detected was si
 <!-- MM: Again, see Vickery 1999 for a definition/list -->
 Both focal species were detected annually in each park, but occupancy was highly variable among parks for eastern meadowlark, and both species had the lowest occupancy at Monocacy (Figure \@ref(fig:parkoccu)).
 
-The covariates that impacted detection probability varied between the two grassland species, although mean probability of detection was similar (approximately 0.7).
-Detection probability varied as a function of disturbance due to traffic noise for eastern meadowlark and wind speed for grasshopper sparrow, though grasshopper sparrow detection was also well-explained (ΔAIC~C~ \< 2) by other covariates, including disturbance (Table \@ref(tab:dettable)). Habitat, landscape, and management covariates (see Table \@ref(tab:occcovs)) all affected occupancy, while the best covariates differed by species (Table \@ref(tab:aicoccu)). 
+The covariates that impacted detection probability varied between the two grassland species, although mean probability of detection given presence was similar at approximately 0.7.
+Detection probability was best modeled as a function of disturbance due to traffic noise (a categorical variable) for eastern meadowlark and wind speed (also a categorical variable) for grasshopper sparrow, though grasshopper sparrow detection was also well-explained by several other covariates, including disturbance (ΔAIC~C~ \< 2, Table \@ref(tab:dettable)).
 
 ### Habitat
 
+<!-- How do I report percent higher? A-B if A and B are proportions or percents? Versus percent increase (A-B)/A? -->
 Site-level habitat features were important predictors of grassland bird occupancy.
 Both species were detected in all field types, row crop, CSG pasture, CSG hayfield, WSG hayfield, and unleased, which played a significant role in occupancy of both species (Figure \@ref(fig:hab)).
 For eastern meadowlark, predicted occupancy in WSG hayfields 
 (`r eame.wsghay.psi`  ±  `r eame.wsghay.se`) was similar to occupancy in CSG pasture (`r eame.pasture.psi` ± `r eame.pasture.se`) and was `r (eame.wsghay.psi - eame.csghay.psi) * 100`% higher than in CSG hayfields (`r eame.csghay.psi` ± `r eame.csghay.se`).
-Eastern Meadowlark occupancy was lowest in unleased fields (`r eame.unleased.psi` ± `r eame.unleased.se`) and row crops (`r eame.rowcrop.psi` ± `r eame.rowcrop.se`), which did not significantly differ from CSG hayfields.
-For grasshopper sparrow, predicted occupancy was higher in all field types and did not differ between pasture (`r grsp.pasture.psi` ± `r grsp.pasture.se`), CSG hayfields (`r grsp.csghay.psi` 
+Eastern Meadowlark occupancy was lowest in row crops (`r eame.rowcrop.psi` ± `r eame.rowcrop.se`) and unleased fields (`r eame.unleased.psi` ± `r eame.unleased.se`), which did not significantly differ from CSG hayfields (Figure \@ref(fig:hab)).
+Predicted occupancy of grasshopper sparrow was higher than eastern meadowlark in all field types and did not differ between pasture (`r grsp.pasture.psi` ± `r grsp.pasture.se`), CSG hayfields (`r grsp.csghay.psi` 
 ± `r grsp.csghay.se`) and WSG hayfields (`r grsp.wsghay.psi` ± `r grsp.wsghay.se`).
 However, grasshopper sparrow occupancy was significantly lower in row crops 
-(`r grsp.rowcrop.psi` ± `r grsp.rowcrop.se`) than in any pasture or hay field type.
-The mean angle to the horizon had a negative impact on occupancy of both species (Figure \@ref(fig:hab)). 
-Woody shrub cover within 100m had a strong negative impact on the occupancy of grasshopper sparrow but was not included in the top model for eastern meadowlark (Figure \@ref(fig:hab)).
+(`r grsp.rowcrop.psi` ± `r grsp.rowcrop.se`) than in any pasture or hay field type (Figures \aref(fig:hab)).
+The mean angle to the horizon had a negative impact on occupancy of both species and woody shrub cover within 100m had a strong negative impact on the occupancy of grasshopper sparrow but was not included in the top model for eastern meadowlark (Figure \@ref(fig:hab)).
 
 ### Landscape
 
 Eastern meadowlark and grasshopper sparrow responded to landscape variables at different spatial scales. 
 The amount of forest, cropland, grassland, and developed land surrounding surveyed points all influenced occupancy.
 Eastern meadowlark responded to landscape variables at multiple spatial scales, with increased grassland within 250 m having a positive impact on occupancy, while a high proportion of development within 250 m and cropland within 2.5 km had a negative impact (Figure \@ref(fig:betas)).
-Grasshopper sparrow responded to land cover at the smallest measured spatial scales.
-The proportion of grassland within 250 m increased grasshopper sparrow occupancy while increased proportions of forest and developed land at this same scale had a negative influence (Figure \@ref(fig:betas)).
+Grasshopper sparrow responded to land cover only at the smallest measured spatial scale.
+Increased proportions of forest and developed land within 250 m had a negative influence, and although grassland at this same scale was included in the top model with a positive influence, the confidence interval crossed zero (Figure \@ref(fig:betas)).
 Multiple scales of land cover, including larger spatial scales, were significant predictors of occupancy when modeled singly, but were not included in the top model.
 
 ### Management
 
 We investigated details of agricultural and burning practices and found that both impacted occupancy.
-217 (90%) of 242 total points were located within agriculturally-leased fields.
+Of the 242 total points, 217 (90%) were located within agriculturally-leased fields.
 Presence of an agricultural lease increased grasshopper sparrow occupancy by `r 100 * (grsp.leased.psi - grsp.unleased.psi)`% (leased: `r grsp.leased.psi` ± `r grsp.leased.se`, unleased: `r grsp.unleased.psi` ± `r grsp.unleased.se`) and a non-significantly positive increase for eastern meadowlark (Figure \@ref(fig:mgmt)). 
 A subset of 55 (25%) of the 217 leased points were subject to harvest timing restrictions, and the presence of a harvest timing restriction increased occupancy of both species (Figure \@ref(fig:mgmt)).
 The precise timing of the restriction varied by park and time period, but lease agreements typically forbade mowing and harvest activities before mid-June or the beginning of July.
@@ -616,40 +614,39 @@ Eastern meadowlark occupancy was non-significantly lower 3 or more years after t
 
 ### Trends
 
-We modeled temporal structure of the data in order to account for model structure and investigate long-term patterns in occupancy by including models with year as a numerical covariate to account for trends or year as a factor to account for interannual variation. 
+We modeled temporal structure of the data in order to account for model structure and investigate long-term patterns in occupancy.
+All final candidate models included year as either a numerical covariate to account for trends or year as a factor to account for interannual variation. 
 Only grasshopper sparrow showed a significant negative trend during the study period (β = `r filter(betas, term == "year", species == "GRSP")$estimate %>% round(2)`, *P* = `r filter(betas, term == "Burned 0-2 years ago*", species == "GRSP")$p.value %>% round(3)`) when accounting for all other modeled factors (Figure \@ref(fig:betas)). 
-Year as a numeric and a factor performed similarly in models for eastern meadowlark (i.e. within 2AIC~c~, Table \@ref(tab:aicoccu)) but neither was significant.
+Year as a numeric and a factor performed similarly in models for eastern meadowlark (i.e. ΔAIC~C~ \< 2, Table \@ref(tab:aicoccu)) but neither was significant.
 
 # Discussion
 
 <!-- Intro -->
-The NPS National Capital Region battlefield parks provide habitat for numerous grassland- and agricultural-breeding species of concern, indicating that these parks contain priority targets for conservation.
-We found that grassland-breeding birds benefit from management in parks, and that managers can take further action to improve habitat and promote occupancy by eastern meadowlark and grasshopper sparrow. 
-We found support for the use of certain management actions (agricultural leases, certain field types, harvest timing restrictions, and prescribed burns) that can be applied further to eastern grasslands managed by NPS. 
-Furthermore, both species responded to habitat and land cover at a scale that can be heavily influenced by actions within the parks.
-At the same time, we also found that the broader landscape outside the parks' control can impact grassland birds.
+The NPS National Capital Region battlefield parks provide habitat for numerous grassland- and agricultural-breeding bird species, indicating that publicly-held lands may play an important role in the conservation of these declining species of concern.
+We found that grassland-breeding birds benefit from management strategies and habitat types already present in battlefield parks. 
+Specific management actions (agricultural leases, certain field types, harvest timing restrictions, and prescribed burns) can be applied further to eastern grasslands managed by NPS. 
+While the broader landscape outside the parks' control can impact grassland birds, both species responded to habitat and land cover at a scale that is primarily influenced by within-park management actions.
 
 <!-- Habitat -->
-Habitat features within the parks were important predictors of occupancy and species' responses were in line with research in other geographic regions.
+Habitat features within the surveyed grasslands were important predictors of occupancy and species' responses were in line with research in other geographic regions.
 Grassland bird occupancy decreased as angle to the horizon increased, indicating that birds respond positively to visual openness and negatively to visual enclosure. 
-Grasshopper sparrow and eastern meadowlark are considered area-sensitive species [@herkert1994; @ribic2009], and although we did not include patch area specifically in models, angle to the horizon can be a proxy for area sensitivity and even outperform it as a predictor in other grassland and marshland species [@keyel2012; @marshall2020].
+Grasshopper sparrow and eastern meadowlark are considered area-sensitive species [@herkert1994; @ribic2009], and although we did not include patch area specifically in models, angle to the horizon can be a proxy for area sensitivity and even outperform it as a predictor in other open-habitat species [@keyel2012; @marshall2020].
 Woody shrub cover had a negative impact on grasshopper sparrow but not eastern meadowlark.
 Eastern meadowlarks' use of song perches and known tolerance for more woody vegetation [@kahl1985; @sample1989] aligns with this result, but their nesting success, which can be impacted by shrub content [@hull2002], was not monitored.
 Occupancy of both species was negatively impacted by row crops such as corn and soy, which were concentrated in Monocacy and Antietam. 
 Although both species are known to use row crops, they typically do so in much lower densities than either native or non-native grasses [@best1997]. 
-Neither species seemed to differentiate between cool-season grasses and warm-season grasses, or between hayfield and pasture, although occupancy was higher in WSG than CSG hayfields.
 Eastern meadowlark and grasshopper sparrow appear to be compatible with grazing and haying; hayfields in particular are known to be attractive to these species [@bollinger1995; @warren2005; @walk2000; @west2016]. 
-Lower rates of nest destruction and depredation in WSG fields have been suggested as a mechanism for higher grasshopper sparrow abundance in warm-season plantings [@giuliano2002].
-Further understanding of demographics and nest success are important to supplement this research on occupancy; data from Harpers Ferry suggest that similar factors (e.g. forest edges) drive nest failure (L. Rudge, University of Delaware, unpublished data).
+Neither species seemed to differentiate between warm- and cool-season grasses, or between hayfields and pasture, although occupancy was higher in WSG than CSG hayfields.
 Eastern meadowlarks have been found in other studies to have higher territory density in non-native, grazed CSG pasture, implying a preference for this habitat type [@moorman2017].
+Lower rates of nest destruction and depredation in WSG fields have been suggested as a mechanism for higher grasshopper sparrow abundance in warm-season plantings [@giuliano2002].
+Because high density can belie low long-term viability when reproductive output is low [@vanhorne1983], abundance and occurrence should not be assumed to guarantee high-quality habitat.
+Further understanding of demographics and nest success are important to supplement this research on occupancy.
+Data from Harpers Ferry suggest that nest failure in these grasslands is driven by similar factors as occupancy, including proximity of forest cover (L. Rudge, University of Delaware, unpublished data).
 
 Habitat is the result of management activities, and these results suggest that changing the planting of field types could have a large impact on the populations of these species in the parks. 
-For example, crop fields that primarily grow corn could be transitioned to hayfields and managers could expand programs to restore warm-season grasses in existing cool-season fields.
-Additional beneficial management activities could include control of encroaching forest edges and fence rows to increase visual openness (decrease the angle to the horizon) where historically appropriate. 
-Several points had large shrub islands in the middle of fields, which could be removed to both increase area for hay farming and encourage higher occupancy probability of grassland species.
+For example, parks could transitioned crop fields to hayfields or other grassland habitat types [@hafe], and managers could expand programs to restore warm-season grasses in existing cool-season fields.
+Additional beneficial management activities could include control of encroaching forest edges, shrub islands, and fence rows to decrease shrub cover and increase visual openness (decrease the angle to the horizon) where historically appropriate. 
 Control activities for shrub and forest are compatible with park goals of restoring historic viewsheds [@nationalparkservice2020; @peterjohn2006], although there are potential tradeoffs with any forest or edge species which may also be of management concern.
-<!-- What can you infer about how different covariates make habitat more attractive / increase nest success / etc?  -->
-<!-- Compare and contrast between your findings and those from other studies of these focal species. Explain if anything was unexpected or at odds with previous research elsewhere, and think about why that might be. Presumably eastern grassland birds don’t necessarily respond the same way to habitat / landscape / management covs as their Plains / Midwest counterparts, otherwise you wouldn’t be doing this research (but if your results align with those from other regions, that’s good/interesting to discuss as well) -->
 
 <!-- Landscape -->
 The response of both species to some features of habitat at the 250 m scale is promising in that it suggests that changes within parks could have a positive impact on grassland bird conservation.
@@ -657,23 +654,25 @@ Both grasshopper sparrow and eastern meadowlark responded positively to a high p
 Grasshopper sparrow responded negatively to high proportions of forest and development at this scale. 
 This pattern is similar to what @irvin2013 found in Delaware, where the species avoided human development and forest at local scales and preferred more grassland at the landscape scale.
 Eastern meadowlark was negatively impacted by cropland within 2.5 km, which is a scale only partially within park control.
+This result was likely driven by low meadowlark occupancy at Monocacy and Antietam, both of which contain or are surrounded by cropland.
 Although not included in top models, development at larger spatial scales is mostly beyond the borders of the park.
-Even at the 250 m scale, development can occur within and near park boundaries such as major roads, buildings, and parking lots that meet the additional needs of the park and inadvertently impact grassland birds.
+Even at the 250 m scale, development pressures exist within and near park boundaries for major roads, buildings, and parking lots that meet the additional needs of the park and inadvertently impact grassland birds; all four parks have acknowledged surrounding development as a potential threat to resources within the park [@hafe; @mana; @anti; @mono].
 
 <!-- Value of park -->
-If species respond to highly local conditions, then these parks embedded in urbanized landscapes can provide particularly valuable habitat. Grassland birds excel at colonizing patches in the east, possibly related to the fact these patches have always been ephemeral in a historically forested landscape [@askins1999], and even smaller patches can be valuable for conservation [@weidman2011].
-Each park has a different baseline for what can be expected, which is important to consider when making management decisions. 
-For example, as Harpers Ferry has more than twice as much forest area as grassland, park managers may choose to prioritize one over the other when goals of maintaining historical appearance are not the deciding factor. 
+If species respond to highly local conditions, then these parks embedded in urbanized landscapes can provide particularly valuable habitat. Grassland birds excel at colonizing patches in the east, possibly because these patches have always been ephemeral in a historically forested landscape [@askins1999], and even smaller patches can be valuable for conservation [@weidman2011; @walk2010].
+Each park has a different baseline, which is important to consider when making management decisions. 
+For example, as Harpers Ferry has more than twice as much forest area as grassland, park managers may choose to prioritize one over the other when goals of maintaining historical appearance are not the deciding factor.
 Local management activities can have benefits for grassland birds using parks even as habitat in the wider landscape is lost.
 
 <!-- Management -->
-We found strong support for the impact of management activities on grassland bird occupancy. 
+We found strong support for the impact of park management activities on grassland bird occupancy. 
 Whether or not a point was ever managed with prescribed fire did not impact occupancy, but the time since last burn was significant for grasshopper sparrow. 
 This contrast in results is likely because there were only a few locations that were ever burned, and other forms of disturbance such as mowing and hay harvest were used elsewhere. 
 In other studies, grasshopper sparrow has shown a mixed response to fire, which can increase nest productivity and abundance [@forde1984; @dechant2002] in the ensuing two to three years but decrease abundance after three [@powell2006] or four years [@madden1999].
 We found that both management approaches can have an impact, but the timing of burns is more important than their use overall.
 Agricultural leases are generally good for eastern meadowlark, but less so when the lease is used to grow row crops.
-Even though leases consist of private entities farming on public lands, which might seem contradictory to the advantages of public lands not being used for the goal of agricultural production, the parks have the power to set the lease terms to be friendly to grassland birds and can institute harvest timing restrictions. We found that harvest timing restrictions, the presence of which has expanded over the course of the study, were important for both species.
+Even though leases consist of private entities farming on public lands, which might seem contradictory to the advantages of public lands not being used for the goal of agricultural production, the parks have the power to set the lease terms to be friendly to grassland birds and can institute harvest timing restrictions [@nationalparkservice2020]. 
+We found that harvest timing restrictions, the presence of which has expanded over the course of the study, were important for both species.
 This effect is likely because delayed harvests allow birds to successfully reproduce in fields under cultivation: in another study, fields that were mowed early in the season had lower grasshopper sparrow densities due to nest destruction, an effect which persisted into the following year [@bollinger1995].
 Although harvest timing restrictions typically mean fewer hay cuttings per year, lessees understand that maximizing yield is not the primary goal when operating on the cultural landscape of a National Park (A. S. Lee, National Park Service, personal communication).
 This management activity was not present in all parks surveyed, but potential expansions could be considered in future years.
@@ -683,7 +682,7 @@ Despite its high occupancy across parks, grasshopper sparrow showed a slight but
 Future work with additional years of data may be able to clarify trends in abundance and potential drivers of those trends among parks.
 <!-- Cite power analysis here. -->
 It is worth noting that while field types were mostly static over time, some fields at Monocacy may have been been planted as hay in one year and row crop in the next due to the terms of that park's leases. 
-Documentation of the precise management and planting done by lessees is not available for all years.
+Documentation of the precise management and planting done by lessees was not available for all years.
 Other covariates such as woody shrub cover and wider land cover were also measured in a single year but could have varied during the study period.
 To support management, there is a need for additional long-term data assessing habitat and management history.
 More local, and annually-measured, habitat variables such as coverage of bare ground, litter depth, and vegetation height [@fisher2010] are known to be important for these species and could not be measured as part of this study. 
@@ -707,9 +706,7 @@ This study was funded by the National Park Service. We thank the numerous techni
 
 # Ethics statement
 
-*"The ETHICS STATEMENT section appears below acknowledgments and should explicitly state that the study adhered to relevant regulations and guidelines regarding the ethics of animal welfare and include protocol numbers parenthetically."* -- JWM style guide
-
-Procedures were part of a study plan approved by the agency and data collection followed NPS protocols for and guidelines related to observational studies in effect at the time the data were collected.
+No animals were handled or harmed during this study. Procedures for these activities were approved by the National Park Service, and survey methods followed typical ethical standards for monitoring birds (https://birdnet.org/info-for-ornithologists/guidelines-english-3rd-edition-2010/).
 
 <!-- The data that support the findings of this study are available from the National Park Service Inventory and Monitoring Program. Restrictions apply to the availability of these data, which were used under license for this study. Data are available from the authors with the permission of NPS. -->
 
@@ -720,31 +717,38 @@ Procedures were part of a study plan approved by the agency and data collection 
 ```{r detcovs}
 flextable(det_covs) %>% 
   merge_v(j = 1) %>% 
-  set_caption('Sample size, range, mean and standard error for potential detection covariates included in candidate models for grassland bird occupancy in National Capital Region battlefield parks (2014-2021). The number of occurrences for each covariate value is reported for categorical covariates.') %>% 
+  set_caption(
+    "Sample size, range, mean and standard error for potential detection covariates included in candidate models for grassland bird occupancy in National Capital Region battlefield parks (2014-2021). The number of occurrences for each covariate value is reported for categorical covariates.") %>% 
   autofit() %>% 
   fit_to_width(max_width = 7) %>% 
-  theme_booktabs(bold_header = TRUE) %>% 
+  theme_booktabs(bold_header = TRUE) %>%
+  hline(
+    j = c(1:3),
+    i = c(1, 5, 11, 12, 13, 14)) %>% 
   footnote(
     i = 2,
     j = 1,
     value = as_paragraph(
-      'Disturbance refers to the observer-assessed noise conditions during the survey: 1) no disturbance, 2) disturbance with slight effect on count, 3) moderate effect on count, and 4) extreme effect on count'),
+      "Disturbance refers to the observer-assessed noise conditions during the survey: 1) no disturbance, 2) disturbance with slight effect on count, 3) moderate effect on count, and 4) extreme effect on count"),
     ref_symbols = 'a') %>% 
-    footnote(
+  footnote(
     i = 6,
     j = 1,
     value = as_paragraph(
-      'Beaufort Scale: 0) 0 mph, smoke rises vertically, 1) 1-3 mph, smoke drifts, 2) 4-7 mph, wind felt on face, 3) 8-12 mph, leaves in constant motion, 4) 13-18 mph, small branches sway, and 5) 19-24 mph, small trees in leaf sway'),
-    ref_symbols = 'b')
+      "Beaufort Scale: 0) 0 mph, smoke rises vertically, 1) 1-3 mph, smoke drifts, 2) 4-7 mph, wind felt on face, 3) 8-12 mph, leaves in constant motion, 4) 13-18 mph, small branches sway, and 5) 19-24 mph, small trees in leaf sway"),
+    ref_symbols = "b")
 
 ```
 
 <br>
 
 ```{r occcovs}
-flextable(occ_covs %>% select(-1)) %>%  
+flextable(
+  occ_covs %>% 
+    select(-1) %>% 
+    mutate(`Occupancy covariates` = str_replace_all(`Occupancy covariates`, "ype: Crop", "ype: Row crop"))) %>%  
   # merge_v(j = 1) %>% 
-  set_caption('Habitat, landscape, and management covariates included in candidate occupancy models for grassland birds in National Capital Region battlefield parks (2014-2021). Mean (SE) reported throughout.') %>%
+  set_caption('Habitat, landscape, and management covariates included in candidate occupancy models for grassland birds in National Capital Region battlefield parks (2014-2021). CSG = cool-season grasses; WSG = warm-season grasses. Harvest restriction refers to time constraints on when fields can be harvested. Mean (SE) reported throughout.') %>%
   bold(i = c(1, 10, 27)) %>% 
   autofit() %>% 
   width(j = 1, width = 1) %>% 
@@ -827,17 +831,19 @@ aic_det <-
   `Eastern meadowlark` = 
     readxl::read_xlsx('output/aic_EAME.xlsx', sheet = 1) %>% 
     select(Modnames, Delta_AICc, AICcWt, K, LL) %>% 
-    filter(Delta_AICc <= 2),
+    filter(
+      Delta_AICc < 2 | Modnames == "null"),
   `Grasshopper sparrow` = 
     readxl::read_xlsx('output/aic_GRSP.xlsx', sheet = 1) %>% 
     select(Modnames, Delta_AICc, AICcWt, K, LL) %>% 
-    filter(Delta_AICc <= 2)
+    filter(Delta_AICc <= 2 | Modnames == "null")
   ), 
   .id = 'Species') %>% 
     mutate(Modnames = 
              str_replace_all(Modnames, 'dist', 'disturbance') %>% 
              str_replace_all('doy', 'day of year') %>% 
              str_replace_all('temp', 'temperature') %>% 
+             str_replace_all('time', 'time of day') %>% 
              str_replace_all('_', ' + '),
            Delta_AICc = round(Delta_AICc, 2),
            AICcWt = round(AICcWt, 3),
@@ -846,11 +852,12 @@ aic_det <-
 
 flextable(aic_det) %>% 
   merge_v(j = 1) %>% 
-  set_caption("Summary of top models affecting probability of detection for two grassland-breeding bird species surveyed in National Capital Region battlefield parks (2014-2021). We report the relative difference in Akaike's Information Criterion compared to the top-ranked model for the species (ΔAICc), AICc weights, the number of parameters in the model (K), and the log-likelihood (LL) for all models within 2 AICc. The top detection model for each species was used in occupancy models.") %>% 
+  set_caption("Summary of top models affecting probability of detection for two grassland-breeding bird species surveyed in National Capital Region battlefield parks (2014-2021). We report the relative difference in Akaike's Information Criterioncorrected for small sample sizes compared to the top-ranked model for the species (ΔAICc), AICc weights, the number of parameters in the model (K), and the log-likelihood (LL) for the null model and all models within 2 AICc of the top model. The top detection model for each species was used in occupancy models.") %>% 
   autofit() %>% 
   fit_to_width(max_width = 6.5) %>% 
   theme_booktabs(bold_header = TRUE) %>% 
-  hline(i = c(1), j = 1:6)
+  hline(i = 2, j = 1:6) %>% 
+  valign(j = 1, valign = "top")
 
 ```
 
@@ -863,14 +870,17 @@ aic_occ <-
   list(
   `Eastern meadowlark` = 
     readxl::read_xlsx('output/aic_EAME.xlsx', sheet = 'combo') %>% 
-    select(formula, Delta_AICc, AICcWt, K, LL) %>% 
-    filter(Delta_AICc <= 2),
+    select(Modnames, formula, Delta_AICc, AICcWt, K, LL) %>% 
+    filter(
+      Delta_AICc <= 2 | Modnames == "null"),
   `Grasshopper sparrow` = 
     readxl::read_xlsx('output/aic_GRSP.xlsx', sheet = 'combo') %>% 
-    select(formula, Delta_AICc, AICcWt, K, LL) %>% 
-    filter(Delta_AICc <= 2)
+    select(Modnames, formula, Delta_AICc, AICcWt, K, LL) %>% 
+    filter(
+      Delta_AICc <= 2 | Modnames == "null")
   ), 
   .id = 'Species') %>% 
+  select(-Modnames) %>% 
   mutate(formula = 
            str_replace_all(formula, 'angle_max', 'max. angle') %>% 
            str_remove_all("scale\\(") %>% 
@@ -886,7 +896,8 @@ aic_occ <-
            str_replace_all('500', '(500 m)') %>% 
            str_replace_all('250', '(250 m)') %>% 
            str_replace_all('fct', '(factor)') %>% 
-           str_replace_all('_', ' '),
+           str_replace_all('_', ' ') %>% 
+           str_replace_all("^1", "null"),
          Delta_AICc = round(Delta_AICc, 2),
          AICcWt = round(AICcWt, 3),
          LL = round(LL, 2)) %>% 
@@ -895,27 +906,27 @@ aic_occ <-
 
 flextable(aic_occ) %>% 
   merge_v(j = 1) %>% 
-  set_caption("Summary of top occupancy models for two grassland-breeding bird species surveyed in National Capital Region battlefield parks (2014-2021). We report the relative difference in Akaike's Information Criterion compared to the top-ranked model for the species (ΔAICc), AICc weights, the number of parameters in the model (K), and the log-likelihood (LL) for all models within 2 AICc.") %>% 
+  set_caption("Summary of top occupancy models for two grassland-breeding bird species surveyed in National Capital Region battlefield parks (2014-2021). We report the relative difference in Akaike's Information Criterion corrected for small sample sizes compared to the top-ranked model for the species (ΔAICc), AICc weights, the number of parameters in the model (K), and the log-likelihood (LL) for the null model and all models within 2 AICc of the top model.") %>% 
   autofit() %>% 
   width(j = 2, width = 2.5) %>% 
   width(j = 1, width = 1.1) %>% 
   fit_to_width(max_width = 7) %>% 
   theme_booktabs(bold_header = TRUE) %>% 
-  hline(i = 2, j = 1:6)
+  hline(i = 3, j = 1:6)%>% 
+  valign(j = 1, valign = "top")
 
 ```
 
 # Figures
 
-<!-- CEN: I like the colors of the inset map, but the gray-shading of the base map is counter-intuitive (i.e., developed areas are usually depicted as lighter and park lands/natural areas are darker.) Suggest inverting the grayscale of the background if possible.  -->
-```{r map, fig.cap = 'Map of the four battlefield parks in the National Park Service (NPS) National Capital Region where grassland bird populations were monitored (2014-2021). Urbanized areas are shown in darker gray. National Capital Region (red box) and other NPS regions are shown in the inset map.'}
+```{r map, fig.width = 6.5, fig.cap = 'Map of the four battlefield parks in the National Park Service (NPS) National Capital Region where grassland bird populations were monitored (2014-2021): Antietam National Battlefield in Sharpsburg, Maryland; Harpers Ferry National Historical Park in Harpers Ferry, West Virginia; Monocacy National Battlefield in Frederick, Maryland; and Manassas National Battlefield Park in Manassas, Virginia. Park lands are shown in black, with surrounding urban areas in gray. National Capital Region (red box) and other NPS regions are shown in the inset map.'}
 # Show NPS map. Generated in scripts/analysis/map_parks.R; Illustrator mods needed
-knitr::include_graphics('output/plots/inset_map_reverse_edited.jpg')
+knitr::include_graphics('output/plots/inset_map_update.jpg')
 ```
 
 <br>
 
-```{r landcover, fig.cap = 'Mean percent cover of four landcover types surrounding surveyed points in National Capital Region battlefield parks at multiple spatial scales.', dpi = 300, fig.width = 6.5, fig.height = 5}
+```{r landcover, fig.cap = 'Mean percent cover of four landcover types (cropland, developed, forest, and grassland) surrounding surveyed points in four National Capital Region battlefield parks at four spatial scales ranging from 250 m to 2.5 km.', dpi = 300, fig.width = 6.5, fig.height = 5}
 # Point covariates import
 read_rds('data/processed/static_covs.rds') %>%
   pivot_longer(
@@ -947,8 +958,8 @@ read_rds('data/processed/static_covs.rds') %>%
   # INITIALIZE PLOT
   ggplot(aes(x = landcover, y = value)) +
   #geom_violin(aes(fill = park_name, color = park_name), scale = 'width') +
-  geom_jitter(aes(color = landcover), width = 0.3) +
-    scale_color_manual(values = c("#CA9146", "#990303", "#85C77E", "#FBF65D")) +
+  geom_jitter(aes(color = landcover), width = 0.3, alpha = 0.75, size = 1) +
+    scale_color_manual(values = c("sienna", "gray40", "#85C77E", "lightgoldenrod")) +
   geom_boxplot(fill = NA, outlier.shape = NA) +
   facet_grid(rows = vars(scale), cols = vars(park_name)) +
   labs(x = '', y = 'Percent landcover') +
@@ -959,14 +970,14 @@ read_rds('data/processed/static_covs.rds') %>%
 
 <br>
 
-```{r corr, fig.cap = 'Correlation matrix of candidate variables for grassland bird occupancy modeling in National Capital Region battlefield parks (2014-2021). When two variables had a correlation of |r| ≥ 0.5, they were not used in the same model. Angle = visual angle to horizon in degrees.'}
+```{r corr, fig.cap = 'Correlation matrix of candidate variables for grassland bird occupancy modeling in National Capital Region battlefield parks (2014-2021). When two variables had a correlation of |r| ≥ 0.5, they were not used in the same model. Angle = visual angle to horizon in degrees; trees = number of trees within 100 m; shrub = percent shrub cover within 100 m.'}
 # This correlation matrix is created in scripts/analysis/covariate_selection.R
 knitr::include_graphics('output/plots/corr_matrix_update.png')
 ```
 
 <br>
 
-```{r parkoccu, fig.cap = 'Observed occupancy (mean annual proportion of points occupied) of two grassland-breeding bird species monitored in National Capital Region battlefield parks (2014-2021). Error bars indicate SE.', dpi = 300, fig.width = 4.25, fig.height = 3.5}
+```{r parkoccu, fig.cap = 'Observed occupancy (mean annual proportion of points occupied) ± SE of two grassland-breeding bird species monitored in National Capital Region battlefield parks (2014-2021)', dpi = 300, fig.width = 4.25, fig.height = 3.5}
 sp_palette <- c("goldenrod", "darkgreen")
 dodge_value <- position_dodge(width = 0.15)
 
@@ -1038,7 +1049,7 @@ mean_prop_points %>%
 
 <br>
 
-```{r hab, fig.cap = 'Predicted occupancy by habitat covariates of (A) field type, (B) angle to horizon, and (C) shrub cover for focal bird species monitored in National Capital Region battlefield parks (2014-2021). Error bars and shaded areas indicate 95% CI.', dpi = 300, fig.width = 4.25, fig.height = 7}
+```{r hab, fig.cap = 'Predicted occupancy by habitat covariates of (A) field type, (B) angle to horizon, and (C) shrub cover for focal bird species monitored in National Capital Region battlefield parks (2014-2021). WSG = warm-season grass; CSG = cool-season grass. Error bars and shaded areas indicate 95% CI.', dpi = 300, fig.width = 4.25, fig.height = 7}
 plot_field <-
   pred %>%
   filter(model == 'pred.psi_habitat', habitat != "WSG unleased") %>%
@@ -1133,7 +1144,7 @@ ggarrange(
 ```
 
 
-```{r betas, fig.cap = 'Coefficient estimates of habitat, landscape, and management covariates included in top occupancy models for grassland birds surveyed in National Capital Region battlefield parks (2014-2021). Starred covariates were run on subsets of the data due to sample size limitations.', dpi = 300, fig.width = 6.5, fig.height = 5}
+```{r betas, fig.cap = 'Coefficient estimates ± SE of habitat, landscape, and management covariates included in top occupancy models for grassland birds surveyed in National Capital Region battlefield parks (2014-2021). WSG = warm-season grass; CSG = cool-season grass. Starred covariates were run on subsets of the data due to sample size limitations.', dpi = 300, fig.width = 6.5, fig.height = 5}
 betas %>% 
   # Create order
   group_by(species) %>% 
@@ -1166,15 +1177,17 @@ betas %>%
   #     'Management' = '#e3ab10',
   #     'Landscape'= '#63acff'
   #     )) +
-  labs(x = '', y = 'β coefficient estimate (SE)', color = '') +
+  labs(x = '', y = 'β coefficient estimate', color = '') +
   coord_flip() +
   facet_wrap(vars(common_name), nrow = 2, scales= "free_y") +
   theme(
     panel.grid.major = element_line(color = "gray90"),
-    legend.justification = c(1,1),
-    legend.position = "bottom",
-    legend.background = element_blank())
-
+    legend.justification = c(1, 1),
+    legend.position = c(0.99, 0.99),
+    legend.title = element_blank(),
+    legend.margin = margin(t = 0, r = 5, b = 1),
+    legend.background = element_rect(fill = "white", color = "gray70")) +
+  labs(caption = "*Covariate run on subset of the data and not included in full models")
 ```
 
 ```{r mgmt, fig.cap = 'Predicted occupancy by management strategy for two grassland-breeding bird species monitored in National Capital Region battlefield parks (2014-2021). (A) Presence of agricultural lease, (B) Presence of harvest timing restriction, (C) Years since harvest timing restriction was initiated, (D) Number of years since last burn. Error bars and shaded areas indicate 95% CI.', dpi = 300, fig.width = 4.25, fig.height = 7.5}
@@ -1284,7 +1297,7 @@ ggarrange(
   labels = c("A", "B", "C", "D"),
   hjust = 0,
   vjust = 0,
-  heights = c(1.2, 1.2, 1.2, 1),
+  heights = c(1.2, 1.2, 1.2, 1.1),
   nrow = 4
 )
 

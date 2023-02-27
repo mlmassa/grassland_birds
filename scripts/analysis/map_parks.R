@@ -32,10 +32,11 @@ park_boundaries <- # NAD83
 # Import US states
 us <- # NAD83
   states(cb = TRUE, resolution = '5m') %>% 
-  filter(!NAME %in% c('Alaska', 'Puerto Rico', 'Hawaii', 
-                      'American Samoa', 
-                      'Commonwealth of the Northern Mariana Islands', 
-                      'United States Virgin Islands', 'Guam'))
+  filter(
+    !NAME %in% c('Alaska', 'Puerto Rico', 'Hawaii', 
+                'American Samoa', 
+                'Commonwealth of the Northern Mariana Islands', 
+                'United States Virgin Islands', 'Guam'))
 # Outline of USA
 us_outline <-
   us %>% st_union()
@@ -62,145 +63,52 @@ nps_regions <- # WGS-84 / Pseudo-Mercator
 # Set theme
 theme_set(theme_void())
 
-# Make basic maps ---------------------------------------------------------
-
-
-# Nationwide scale map
-national_map <-
-  ggplot() +
-    # NPS regions
-      geom_sf(data = nps_regions %>% 
-                st_transform(crs = crs_far), 
-              aes(fill = Region), 
-              color = NA) +
-      scale_fill_brewer(palette = 'Set3', direction = 1) +
-    # US state borders
-      geom_sf(data = us %>% 
-                st_transform(crs = crs_far), 
-              size = 0.25, 
-              fill = NA,
-              color = alpha('gray20', 0.3)) +
-    # US outline
-      geom_sf(data = us_outline,
-              fill = NA)
-
-# Region scale map
-regional_map <-
-  ggplot() +
-    # Base color for states
-      geom_sf(data = us %>%
-                st_transform(crs = crs_close),
-              fill = 'gray90',
-              color = NA) +
-    # NCR
-      geom_sf(data = nps_regions %>% 
-                filter(Region == 'National Capital') %>% 
-                st_transform(crs = crs_close),
-              fill = '#fdb462', color = '#fdb462') +
-    # States for context
-      geom_sf(data = us %>%
-                st_transform(crs = crs_close),
-              fill = NA,
-              size = 0.25) +
-    # Focal parks
-      geom_sf(data = park_centroids, size = 3) +
-    # Set scale
-      coord_sf(
-        xlim = st_bbox(nps_regions %>% 
-                filter(Region == 'National Capital') %>% 
-                st_transform(crs = crs_close))[c(1,3)],
-        ylim = st_bbox(nps_regions %>% 
-                filter(Region == 'National Capital') %>% 
-                st_transform(crs = crs_close))[c(2,4)],
-        expand = TRUE) +
-    # Park labels
-      ggrepel::geom_text_repel(
-        data = park_centroids,
-        aes(
-            label = PARKNAME,
-            ## Alternative: Harpers Ferry (HAFE). Takes up more room.
-            # label = paste0(PARKNAME, '\n(', UNIT_CODE, ')'), 
-            geometry = geometry),
-        stat = 'sf_coordinates',
-        size = 4,
-        segment.color = NA)
-  
-
-# Get bbox of national map (will be expanding it later)
-national_bbox <-
-  nps_regions %>% 
-    st_transform(crs = crs_far) %>% 
-    st_bbox()
-
-# Create focused national map (bbox, larger)
-national_map_focus <-
-  national_map +
-  theme(legend.position = c(0, 0),
-        legend.direction = 'horizontal',
-        legend.justification = 'left',
-        legend.key.size = unit(0.3, 'cm')) +
-  # Add bbox for inset
-    geom_sf(
-      data = 
-        st_bbox(
-          nps_regions %>% 
-            filter(Region == 'National Capital') %>% 
-            st_transform(crs = crs_far) %>% 
-            st_buffer(dist = 30000)) %>% 
-        st_as_sfc(),
-      fill = NA,
-      color = 'black',
-      size = 0.9) +
-  # Expand map to right to make room for inset
-    coord_sf(xlim = c(national_bbox[1], national_bbox[3] * 1.3),
-             ylim = c(national_bbox[2], national_bbox[4]))
-
-inset_map <-
-  national_map_focus %>% 
-    ggdraw() +
-    draw_plot(
-      {regional_map +
-          theme(
-            panel.border = element_rect(color = "black", fill = NA, size = 0.9))},
-      x = 0.75, y = 0.17, 
-      width = 0.25, height = 0.25)
-
 # Reversed inset map ------------------------------------------------------
 
 region_palette <-
   c(
-    '#ebb1a4', # pacwest
-    '#C8B08D', # mtn
-    '#DBE6C1', # midwest
-    '#B3C495', # se
-    '#8297c2', # ne
-    '#fdb462' #cap
+    'gray50', # pacwest
+    'gray80', # mtn
+    'gray35', # midwest
+    'gray70', # se
+    'gray95', # ne
+    '#f0b25b' #cap
     )
 
 # Nationwide scale map
 national_map <-
   ggplot() +
     # NPS regions (outline)
-      geom_sf(data = nps_regions %>% 
-                st_transform(crs = crs_far), 
-              aes(fill = Region),
-              color = NA) +
+      geom_sf(
+        data = nps_regions %>% 
+          group_by(Region) %>% summarize() %>% 
+          st_transform(crs = crs_far), 
+        aes(fill = Region), 
+        color = "black",
+        size = 0.25) +
       scale_fill_discrete(type = region_palette) +
-    # NPS regions (NCRN fill)
-      geom_sf(data = nps_regions %>% 
-                filter(Region == 'National Capital') %>% 
-                st_transform(crs = crs_far), 
-              color = '#fdb462', fill = '#fdb462') +
     # US state borders
-      geom_sf(data = us %>% 
-                st_transform(crs = crs_far), 
-              size = 0.2, 
-              fill = NA,
-              color = alpha('black', 0.2)) +
+      geom_sf(
+        data = us %>% st_transform(crs = crs_far), 
+        size = 0.25, 
+        fill = NA,
+        color = alpha('black', 0.2)) +
     # US outline
-      geom_sf(data = us_outline,
-              color = 'black',
-              fill = NA)
+      geom_sf(
+        data = us_outline,
+        fill = NA,
+        color = "black",
+        size = 0.3) +
+  # Edit legend
+  labs(fill = "NPS Region") +
+  theme(
+    legend.position = "top", 
+    legend.direction = "horizontal") +
+  guides(
+    fill = guide_legend(
+      title.position = "top",
+      title.hjust = 0.5,
+      title.theme = element_text(face = "bold")))
 
 # Get bbox of national map (will be expanding it later)
 national_bbox <-
@@ -214,39 +122,62 @@ region_xlims <-
   st_bbox(
     nps_regions %>% 
     filter(Region == 'National Capital') %>% 
-    st_transform(crs = crs_close))[c(1,3)] * c(0.9, 1.1)
+    st_transform(crs = crs_close))[c(1,3)] * c(0.95, 1.05)
 
 region_ylims <-
   st_bbox(
     nps_regions %>% 
     filter(Region == 'National Capital') %>% 
-    st_transform(crs = crs_close))[c(2,4)] * c(0.9, 1.03)
+    st_transform(crs = crs_close))[c(2,4)] * c(0.9, 1)
   
 
 regional_map <-
   ggplot() +
     # Base color for states
-      geom_sf(data = us %>%
-                st_transform(crs = crs_close),
-              fill = 'gray90',
-              color = NA) +
-    # NCR
-      geom_sf(data = nps_regions %>% 
-                filter(Region == 'National Capital') %>% 
-                st_transform(crs = crs_close),
-              fill = '#fdb462', color = '#fdb462') +
+      geom_sf(
+        data = us %>% st_transform(crs = crs_close),
+        fill = 'gray95',
+        color = NA) +
+    # NCR base
+      geom_sf(
+        data = nps_regions %>% 
+          group_by(Region) %>% 
+          summarize() %>% 
+          filter(Region == 'National Capital') %>% 
+        st_transform(crs = crs_close),
+        fill = region_palette[6], 
+        alpha = 0.25, 
+        color = NA) +
+    # NCR highlight
+      geom_sf(
+        data = nps_regions %>% 
+          group_by(Region) %>% 
+          summarize() %>% 
+          filter(Region == 'National Capital') %>% 
+        st_transform(crs = crs_close),
+        fill = NA, 
+        color = region_palette[6], size = 2) +
     # Urban areas
-      geom_sf(data = urban,
-              fill = 'gray20', alpha = 0.2, color = NA) +
+      geom_sf(
+        data = urban,
+        fill = "gray30", 
+        alpha = 0.15, 
+        color = NA) +
     # States for context
-      geom_sf(data = us %>%
-                st_transform(crs = crs_close),
-              fill = NA,
-              size = 0.3) +
+      geom_sf(
+        data = us %>% st_transform(crs = crs_close),
+        fill = NA,
+        color = "gray30",
+        size = 0.25,
+        alpha = 0.8) +
     # Focal parks
       #geom_sf(data = park_centroids, size = 3) +
     # ALT: Park outlines
-      geom_sf(data = park_boundaries, fill = 'black', color = NA) +
+      geom_sf(
+        data = park_boundaries, 
+        fill = 'black', 
+        color = "black",
+        size = 0.1) +
     # Set scale
       coord_sf(
         xlim = region_xlims,
@@ -256,27 +187,28 @@ regional_map <-
       ggrepel::geom_text_repel(
         data = park_boundaries,
         aes(
-            label = PARKNAME,
-            ## Alternative: "Harpers Ferry (HAFE)". Takes up more room.
-            # label = paste0(PARKNAME, '\n(', UNIT_CODE, ')'), 
+            # label = PARKNAME,
+            ## Alternative:
+            label = paste0(PARKNAME, '\n', UNIT_TYPE),
             geometry = geometry),
         stat = 'sf_coordinates',
         size = 4,
-        point.padding = 0.25,
-        segment.color = NA)
+        point.padding = 0.5,
+        segment.color = NA) +
+  # Scale bar
+  ggsn::scalebar(
+    data = 
+      nps_regions %>% 
+      filter(Region == 'National Capital') %>% 
+      st_buffer(dist = 9000) %>% 
+      st_transform(crs = crs_close),
+    dist = 25, dist_unit = "km",
+    transform = F,
+    border.size = 0.5)
 
 
 national_map_focus <-
   national_map +
-  labs(fill = 'NPS Region') +
-  guides(fill = guide_legend(nrow = 2, byrow = TRUE)) +
-  theme(legend.position = 'top',
-        legend.direction = 'vertical',
-        legend.justification = 'center',
-        legend.title.align = 0.5,
-        legend.spacing.y = unit(0.2, 'cm'),
-        legend.spacing.x = unit(0.1, 'cm'),
-        legend.key.size = unit(0.4, 'cm')) +
   # Add bbox for inset
     geom_sf(
       data = 
@@ -287,27 +219,32 @@ national_map_focus <-
             st_buffer(dist = 70000)) %>% 
         st_as_sfc(),
       fill = NA,
-      color = 'firebrick',
-      size = 0.9)
+      color = 'red',
+      size = 0.7)
 
 inset_map_reverse <-
   regional_map %>% 
     ggdraw() +
     draw_plot(
-      {national_map_focus +
+      {
+        national_map_focus +
           theme(
-            # panel.border = element_rect(color = "black", fill = NA, size = 0.75),
-            panel.background = element_rect(color = 'white'),
-            legend.background = element_rect(color = 'white'))},
+            plot.title = element_text(size = 10),
+            plot.background = element_rect(fill = "white", color = "black", size = 1),
+            plot.margin = margin(t = 5, l = 4, r = 4),
+            legend.text = element_text(size = 7),
+            legend.margin = margin(),
+            legend.key.size = unit(7, "points"))
+      },
       x = 0.01, y = 0.05, 
-      width = 0.5, height = 0.5)
+      width = 0.5, height = 0.45)
 
 inset_map_reverse
 
 
 ggsave('output/plots/inset_map.pdf',
-       plot = inset_map,
+       plot = inset_map_reverse,
        width = 6.5,
-       height = 4.5,
+       height = 4,
        units = 'in')
 
