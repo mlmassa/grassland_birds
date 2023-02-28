@@ -1,0 +1,112 @@
+---
+date: |
+  `r format(Sys.time(), '%d %b %Y')`
+title: | 
+  Chapter 2 draft: something something working lands under public and private control have equal grassland bird community whatevers
+author: 
+  - Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
+  # - Thomas L. Serfass, Frostburg State University, 101 Braddock Road, Frostburg, MD 21532, USA
+  # - Amy E. M. Johnson, Smithsonian Conservation Biology Institute, 1500 Remount Road, Front Royal, VA 22630, USA
+  # - Elizabeth R. Matthews, National Park Service, 1100 Ohio Drive SW, Washington, DC 20242, USA
+  # - W. Gregory Shriver, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
+  # - Emily B. Cohen, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
+output: 
+  bookdown::word_document2:
+    reference_docx: 'template_simple.docx'
+    number_sections: false
+    linenumbers: yes
+  bookdown::html_document2:
+    toc: true
+    toc_float:
+      collapsed: true
+    toc_depth: 3
+    fig_caption: true
+    number_sections: false
+bibliography: ./Thesis.bib
+csl: ./condor_style.csl
+link-citations: yes
+---
+```{r setup, include = F}
+
+# Don't show code chunks
+knitr::opts_chunk$set(message = F, warning = F, echo = F)
+
+# Load required packages
+library(knitr)
+library(kableExtra)
+library(flextable)
+library(tidyverse)
+library(ggpubr)
+library(unmarked)
+source('scripts/wrangling/tidy_method_unmarked.R')
+
+# Don't show NAs in kables
+options(knitr.kable.NA = '')
+
+# If simple template, Flextable defaults to Calibri 11. Otherwise, TNR 12
+if (rmarkdown::metadata$output$`bookdown::word_document2`$reference_docx == 'template_simple.docx')
+  set_flextable_defaults(font.family = 'Calibri', font.size = 11) else
+    set_flextable_defaults(font.family = 'Times New Roman', font.size = 12) 
+
+# Set plot theme
+theme_set(
+  theme_bw() +
+  theme(
+    strip.text = element_text(size = 11),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 10),
+    panel.grid = element_blank(),
+    strip.background = element_blank()))
+```
+
+*Correspondence*: Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA. Email: megan.massa@umces.edu
+
+**KEYWORDS** `r paste(sort(c("grassland birds")), collapse = ", ")`
+
+\newpage
+
+# Abstract
+
+<!-- The Abstract is perhaps the most important paragraph in a paper. Avoid writing it as a mere summary of the research. Place key results in the abstract’s first two sentences – don't bury the lede. Do not include lists of common methods, discursive explanations of what you set out to accomplish, or citations. Use the abstract and title to highlight the paper’s keywords. Maximum word count is 350.  -->
+
+# Introduction
+
+<!-- This section provides your research aims and significance and places it within the framework of the existing literature. The last Introduction paragraph typically provides the study’s hypotheses and testable predictions. Use citations judiciously; most points can be supported by three or fewer citations. Long lists of citations are seldom required and detract from the readability of the manuscript. -->
+
+The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
+
+# Methods
+
+<!-- Provide enough information to enable readers to replicate and critically evaluate the research. Describe statistical tests and procedures. Cite statistical software and analysis programs. Explain how summary statistics are reported in Results, e.g., means ± 1 SE.  -->
+
+
+# Results
+
+<!-- Include only results pertinent to the hypotheses being tested or questions raised in the Introduction section and treated in the Discussion. Use the same number of decimal places for means and estimates of uncertainty (e.g., 38.9 ± 1.2, not 38.9 ± 1.23); usually only one or two decimal places are necessary. Round percentages to whole numbers. The text should not duplicate material presented in tables or figures. Clearly present relevant sample sizes, degrees of freedom, values of statistical tests, and P-values. Test statistics should be rounded to one (t-test, C2, F, etc.) or two (r, r2, etc.) decimal places. See Statistical Details in the Style Sheet for more information. -->
+
+
+# Discussion
+
+<!-- Begin with a statement that summarizes the study’s main findings. Develop the significance and importance of the results and set them into a framework of previous research. Additional statistical tests and results are inappropriate here except in unusual cases. If you have a Conclusion section, list it as a subheading within the Discussion. -->
+
+
+# Acknowledgments
+
+Thank sponsors, everyone who helped with research, and reviewers
+
+**Funding statement**
+
+**Ethics statement**
+
+**Conflict of interest statement**
+
+**Author contributions**
+
+**Data availability**
+
+# Tables
+
+# Figures
+
+# References
