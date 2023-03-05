@@ -62,7 +62,7 @@ theme_set(
 
 *Correspondence*: Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA. Email: megan.massa@umces.edu
 
-**KEYWORDS** `r paste(sort(c("grassland birds")), collapse = ", ")`
+**KEYWORDS** `r paste(sort(c("grassland birds", "protected areas", "working lands")), collapse = ", ")`
 
 \newpage
 
@@ -74,12 +74,51 @@ theme_set(
 
 <!-- This section provides your research aims and significance and places it within the framework of the existing literature. The last Introduction paragraph typically provides the study’s hypotheses and testable predictions. Use citations judiciously; most points can be supported by three or fewer citations. Long lists of citations are seldom required and detract from the readability of the manuscript. -->
 
-The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
+Biodiversity is in decline. 
+Avian biodiversity in particular.
+Particularly grasslands.
+Protected areas are an important way to maintain biodiversity.
+But working lands not under strict protection are also important.
+
+Summarize research on community index (forest focused) and role of protected areas (not focused on grassland birds in this region).
+Role of easements.
+
+We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of protected areas and private land for grassland bird conservation.
+Specifically, we examined bird populations in four national battlefield parks and on XXX properties enrolled in Virginia Working Landscapes
+We hypothesized that protected areas would host higher grassland bird richness and diversity, and that 
 
 # Methods
 
 <!-- Provide enough information to enable readers to replicate and critically evaluate the research. Describe statistical tests and procedures. Cite statistical software and analysis programs. Explain how summary statistics are reported in Results, e.g., means ± 1 SE.  -->
 
+The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
+Virginia Working Landscapes
+
+We classified species as obligate and facultative grassland-breeders following @vickery1999 Table \@ref(tab:species)). 
+
+Calculated richness and Shannon diversity of grassland species using the R package "vegan" [@oksanen2022]
+
+Modeled
+
+Although abundance can be modeled as a hierarchical process
+
+We performed all analyses with program R version 4.1.2 [@rcoreteam2022]. 
+
+```{r species}
+read_rds("data/processed/sp_grs_ch2.rds") %>% 
+  select(
+    `Common name` = common_name,
+    `Scientific name` = sci_name,
+    Designation = status) %>% 
+  flextable() %>% 
+  set_caption(
+    "Grassland birds detected. Designation from Vickery et al. (1999).") %>% 
+  theme_booktabs(bold_header = TRUE) %>% 
+  autofit() %>% 
+  fit_to_width(max_width = 6.5) %>% 
+  italic(j = 2) %>% 
+  line_spacing(space = 0.5)
+```
 
 # Results
 
