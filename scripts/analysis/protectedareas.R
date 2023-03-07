@@ -2,7 +2,7 @@
 
 # Setup -------------------------------------------------------------------
 
-library(raster)
+#library(raster)
 library(tidyverse)
 library(sf)
 
@@ -15,16 +15,16 @@ y <- 2016
 
 # Protected areas database
 pl <-
-  st_read("data/raw/PADUS3_0Combined_Region1.shp") %>% 
-  filter(State_Nm %in% c("VA", "MD", "WV")) %>% 
+  st_read("data/raw/PADUS3_0Combined_Region1.shp") %>%
+  filter(State_Nm %in% c("VA", "MD", "WV")) %>%
   # Fix polygon errors
-  st_make_valid() %>% 
-  st_transform(crs = 4326) %>% 
+  st_make_valid() %>%
+  st_transform(crs = 4326) %>%
   # Simplify ownership
   mutate(
     owner = case_when(
       d_Own_Type %in% c(
-        "Local Government", "State", 
+        "Local Government", "State",
         "Non-Governmental Organization", "Federal") ~ "Public",
       d_Own_Type == "Private" ~ "Private easement",
       TRUE ~ d_Own_Type))
@@ -51,7 +51,9 @@ points <-
     select(
       pl, owner, manager = d_Mang_Nam, pa_name = Unit_Nm, geometry)) %>%
   # Add category for unprotected ownership
-  replace_na(list(owner = "Private unprotected", manager = "Private"))
+  replace_na(list(owner = "Private unprotected", manager = "Private")) %>% 
+  # Remove dupes caused by overlapping polygons
+  filter(!duplicated(point_id))
 
 # Import and combine bird survey visit data
 visits <-
@@ -186,47 +188,49 @@ write_rds(sp_grs, "data/processed/sp_grs_ch2.rds")
 #   landcover %>% 
 #     select(point_id, radius, cropland, developed, forest, grassland),
 #   "data/processed/ch2_landcover.rds")
-# 
-# landcover <-
-#   read_rds("data/processed/ch2_landcover.rds")
-
-landcover <- read_rds("data/processed/ch2_landcover.rds")
 
 # Protected area cover ----------------------------------------------------
 
-points_buffer <-
-  map_dfr(
-    radii,
-    ~st_buffer(points, .x) %>% 
-  mutate(radius = .x))
+# points_buffer <-
+#   map_dfr(
+#     radii,
+#     ~st_buffer(points, .x) %>% 
+#   mutate(radius = .x))
+# 
+# points_buffer$area <- st_area(points_buffer)
+# 
+# prot_area <-
+#   points_buffer %>% 
+#   group_by(point_id, radius) %>%
+#   # Intersect buffers with flattened protected area multipolygon
+#   st_intersection(
+#     pl %>% 
+#     # Crop to study area to speed calculations and plotting
+#     st_crop(
+#       st_buffer(points, dist = max(radii) + 100)) %>% 
+#     # Combine all polygons into one "protected area"
+#     st_union() %>% 
+#     # Some errors result. Autofix them
+#     st_make_valid())
+#   
+# prot_area$overlap_area <- st_area(prot_area)
+# 
+# prot_area <-
+#   mutate(
+#     prot_area,
+#     protected = (overlap_area/area) %>% units::drop_units()) %>% 
+#   select(-area, -overlap_area) %>% 
+#   st_drop_geometry()
+# 
+# write_rds(
+#   landcover %>% 
+#     left_join(prot_area %>% select(point_id, radius, protected)),
+#   "data/processed/ch2_landcover.rds")
 
-points_buffer$area <- st_area(points_buffer)
-
-prot_area <-
-  points_buffer %>% 
-  group_by(point_id, radius) %>%
-  # Intersect buffers with flattened protected area multipolygon
-  st_intersection(
-    pl %>% 
-    # Crop to study area to speed calculations and plotting
-    st_crop(
-      st_buffer(points, dist = max(radii) + 100)) %>% 
-    # Combine all polygons into one "protected area"
-    st_union() %>% 
-    # Some errors result. Autofix them
-    st_make_valid())
-  
-prot_area$overlap_area <- st_area(prot_area)
-
-prot_area <-
-  mutate(
-    prot_area,
-    prop_protected = (overlap_area/area) %>% units::drop_units()) %>% 
-  select(-area, -overlap_area) %>% 
-  st_drop_geometry()
-
-landcover %>% 
-  left_join(prot_area %>% select(point_id, radius, prop_protected))
+landcover <- 
+  read_rds("data/processed/ch2_landcover.rds") %>% 
+  distinct() %>% 
+  replace_na(list(protected = 0))
 
 # Summary and exploration -------------------------------------------------
 
@@ -238,8 +242,11 @@ birds %>%
   filter(incidental == 0) %>% 
   left_join(visits) %>% 
   filter(species %in% c(sp_ob, sp_fac)) %>% 
-  group_by(point_id) %>% summarize(sp = length(unique(species))) %>% 
-  left_join(points) %>% group_by(owner) %>% summarize(mean_sp = mean(sp))
+  group_by(point_id) %>% 
+  summarize(sp = length(unique(species))) %>% 
+  left_join(points) %>% 
+  group_by(owner) %>% 
+  summarize(mean_sp = mean(sp))
 
 # What was the distribution of ownership over years?
 visits %>% 
@@ -266,29 +273,148 @@ for (i in 1:11){
     pull(point_id) %>% unique()
 }
 
-# Which combination of years would get the most points? 2016+17
-c(surveyed_points[[5]], surveyed_points[[6]]) %>% unique() %>% length()
-
 # What is the distribution of area protected by radius and owner?
-prot_area %>% 
+landcover %>% 
+  left_join(points) %>% 
   ggplot(
-    aes(x = radius, y = prop_protected, color = owner)) + 
-  geom_jitter() +
-  scale_color_brewer(palette = "Paired") 
+    aes(x = factor(radius), y = protected, fill = owner)) + 
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Paired") +
+  labs(x = "Radius", y = "Proportion protected areas", fill = "Landowner")
 
+# How many new points were added each year?
+# When was the most recent survey?
+first_year <-
+  visits %>% 
+  left_join(points) %>% 
+  group_by(point_id, owner) %>% 
+  filter(!is.na(owner)) %>% 
+  summarize(first = min(year), last = max(year))
+
+first_year %>% 
+  group_by(first, owner) %>% 
+  count() %>% 
+  ggplot(aes(x = factor(first), y = n, fill = owner)) +
+  geom_col() +
+  scale_fill_brewer(palette = "Paired") +
+  labs(x = "", y = "New points added", fill = "Landowner") +
+  theme(legend.position = c(0.75, 0.85))
+
+first_year %>% 
+  group_by(last, owner) %>% 
+  count() %>% 
+  ggplot(aes(x = factor(last), y = n, fill = owner)) +
+  geom_col() +
+  scale_fill_brewer(palette = "Paired") +
+  labs(x = "", y = "Last surveyed", fill = "Landowner") +
+  theme(legend.position = c(0.15, 0.85))
 
 # Format data for vegan ---------------------------------------------------
 
+# Take only first year of survey
+focal_points <-
+  visits %>% 
+  left_join(first_year) %>% 
+  filter(year == first) %>% 
+  filter(visit == 3) %>% 
+  select(point_id, first)
+
+# New focal points
+points_f <-
+  points %>% 
+  filter(point_id %in% focal_points$point_id) %>% 
+  distinct(point_id, .keep_all = T)
+
+# New focal visits
+visits_f <-
+  visits %>% 
+  right_join(focal_points) %>% 
+  filter(year == first, visit <=3)
+
+# New birds
+birds_f <-
+  birds %>% 
+  filter(
+    visit_id %in% visits_f$visit_id, 
+    incidental == 0) %>% 
+  select(-incidental)
+
 # Wide species abundance per site table
-left_join(birds, visits) %>% 
-  filter(visit <= 3, year == 2016) %>% 
-  group_by(visit_id, point_id, species) %>% 
+abund_a <-
+  left_join(birds_f, visits_f) %>% 
+  group_by(visit_id, species) %>% 
   count() %>% 
+  # Get zeroes
+  right_join(
+    birds_f %>% expand(visit_id, species)) %>% 
+  replace_na(list(n = 0)) %>% 
+  left_join(visits_f) %>% 
+  filter(species %in% sp_grs$species) %>% 
   group_by(point_id, species) %>% 
   summarize(
-    max = max(n),
-    sum = sum(n),
-    mean = mean(n)) %>% 
-  ggplot(aes(x = max)) + geom_histogram()
+    #max = max(n),
+    #sum = sum(n),
+    mean = mean(n)
+    ) %>% 
+  pivot_wider(names_from = "species", values_from = "mean")
+
+# But what if I want the relative frequency of the species across ALL visits
+# standardized to number of visits?
+abund_b <-
+  left_join(birds, visits) %>% 
+  group_by(visit_id, species) %>% 
+  count() %>% 
+  # Get zeroes
+  right_join(
+    birds %>% expand(visit_id, species)) %>% 
+  replace_na(list(n = 0)) %>% 
+  left_join(visits) %>% 
+  filter(species %in% sp_grs$species) %>% 
+  group_by(point_id, species) %>% 
+  summarize(
+    #max = max(n),
+    #sum = sum(n),
+    mean = mean(n)
+    #visits = length(n)
+    ) %>% 
+  pivot_wider(names_from = "species", values_from = "mean")
+
+
+# Calculate metrics and visualize -----------------------------------------
+
+
+library(vegan)
+
+
+data <-
+  full_join(
+    specnumber(
+      column_to_rownames(abund_a, var = "point_id"))%>% 
+      enframe(name = "point_id", value = "richness"),
+    diversity(
+      column_to_rownames(abund_a, var = "point_id")) %>% 
+      enframe(name = "point_id", value = "diversity")) %>% 
+    left_join(landcover) %>%
+    left_join(points)
   
+hist(data$richness)
+hist(data$diversity)
+
+data %>% 
+  filter(!is.na(radius)) %>% 
+  pivot_longer(
+    cols = cropland:protected, 
+    values_to = "proportion", 
+    names_to = "metric") %>% 
+  ggplot(aes(x = proportion, y = diversity)) +
+    geom_jitter(alpha = 0.15, size = 0.25) +
+    facet_grid(rows = vars(metric), cols = vars(radius)) +
+    geom_smooth(method = "lm")
+
+data %>% 
+  filter(!is.na(owner)) %>% 
+  ggplot(aes(x = owner, y = diversity, fill = owner)) +
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Paired")
+
   
