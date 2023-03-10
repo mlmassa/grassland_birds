@@ -5,6 +5,7 @@
 #library(raster)
 library(tidyverse)
 library(sf)
+library(vegan)
 
 theme_set(theme_bw())
 
@@ -53,7 +54,16 @@ points <-
   # Add category for unprotected ownership
   replace_na(list(owner = "Private unprotected", manager = "Private")) %>% 
   # Remove dupes caused by overlapping polygons
-  filter(!duplicated(point_id))
+  filter(!duplicated(point_id)) %>% 
+  # Change VWL property ID in NPS to match NPS data
+  mutate(
+    property_id = case_when(
+      pa_name == "Manassas National Battlefield Park" ~ "MANA",
+      pa_name == "George Washington National Forest" ~ "GWNF",
+      pa_name == "Shenandoah National Park" ~ "SHEN",
+      pa_name == "Sky Meadows State Park" ~ "SMSP",
+      pa_name == "Shenandoah Valley Battlefield Foundation Holding" ~ "SVBF Holding",
+      TRUE ~ property_id))
 
 # Import and combine bird survey visit data
 visits <-
@@ -237,7 +247,45 @@ landcover <-
 # How many grassland species?
 nrow(sp_grs)
 
+# How many detections?
+birds %>% 
+  filter(species %in% sp_grs$species, incidental == 0) %>% 
+  group_by(species) %>% 
+  count() %>% 
+  left_join(
+    sp_grs %>% 
+    select(species, common_name, status)) %>% 
+  arrange(n) %>% 
+  ggplot(aes(x = n, y = reorder(common_name, n), fill = status)) + 
+    geom_col() + 
+    labs(x = "Total detections", y = "", fill = "") + 
+    scale_fill_manual(values = c("goldenrod", "forestgreen")) +
+  theme_bw(base_size = 20) +
+  theme(
+    legend.position = c(0.8, 0.2))
+
+# Average abundance of all obligates
+birds %>% 
+  filter(incidental != 0) %>% 
+  left_join(sp_grs) %>% 
+  left_join(visits) %>% 
+  group_by(visit_id, status, point_id) %>% 
+  summarize(n = n()) %>% 
+  replace_na(list(status = "non-grassland")) %>% 
+  left_join(points) %>% 
+  group_by(owner, status) %>% 
+  summarize(mean_birds_surv = mean(n), se = sd(n)/sqrt(length(n))) %>% 
+  filter(!is.na(owner), status != "non-grassland") %>% 
+  ggplot(aes(x = status, y = mean_birds_surv, fill = owner)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = mean_birds_surv - se, ymax = mean_birds_surv + se), position = position_dodge()) +
+  scale_fill_brewer(palette = "Paired") +
+  labs(x = "", y = "Mean individuals per survey (SE)", fill = "Landowner")
+  
+  
+
 # Maximum of 27 grassland species possible. 26 if exclude WTKI
+# Per point?
 birds %>% 
   filter(incidental == 0) %>% 
   left_join(visits) %>% 
@@ -246,7 +294,20 @@ birds %>%
   summarize(sp = length(unique(species))) %>% 
   left_join(points) %>% 
   group_by(owner) %>% 
-  summarize(mean_sp = mean(sp))
+  summarize(mean_sp = mean(sp), se = sd(sp)/sqrt(length(sp)))
+
+# Per property?
+birds %>% 
+  filter(incidental == 0) %>% 
+  left_join(visits) %>% 
+  left_join(points) %>% 
+  filter(species %in% c(sp_ob, sp_fac)) %>% 
+  group_by(property_id) %>% 
+  summarize(sp = length(unique(species))) %>% 
+  #left_join(visits) %>% 
+  left_join(points %>% distinct(property_id, owner)) %>% 
+  group_by(owner) %>% 
+  summarize(mean_sp = mean(sp), se = sd(sp)/sqrt(length(sp)))
 
 # What was the distribution of ownership over years?
 visits %>% 
@@ -379,42 +440,117 @@ abund_b <-
     ) %>% 
   pivot_wider(names_from = "species", values_from = "mean")
 
+# Another method: use rarefaction
+# Make a species accumulation curve
+visits %>% 
+  group_by(point_id) %>% 
+  arrange(date) %>% 
+  mutate(total_visits = row_number()) %>%
+  right_join(birds) %>% 
+  group_by(point_id, total_visits) %>% 
+  distinct(species) %>% 
+  group_by(point_id) %>% 
+  distinct(species, .keep_all = T) %>% 
+  group_by(total_visits, point_id) %>% 
+  filter(species %in% sp_grs$species) %>% 
+  summarize(new_sp = length(unique(species))) %>% 
+  arrange(point_id, total_visits) %>% 
+  group_by(point_id) %>% 
+  mutate(total_sp = cumsum(new_sp)) %>% 
+  bind_rows(crossing(point_id = unique(visits$point_id), total_sp = 0, total_visits = 0)) %>% 
+  left_join(points) %>% 
+  ggplot(
+    aes(
+      x = total_visits, 
+      y = total_sp, 
+      color = owner, 
+      group = point_id)) + 
+    #geom_jitter(size = 0.5, height = 0.3, width = 0.3) +
+    geom_line(alpha = 0.5) +
+    scale_color_brewer(palette = "Paired") +
+    theme(legend.position = "none") +
+    labs(
+      x = "Total visits to point", 
+      y = "Total grassland species", 
+      title = "Species accumulation")
 
 # Calculate metrics and visualize -----------------------------------------
 
-
-library(vegan)
-
+abund <- abund_b
 
 data <-
   full_join(
     specnumber(
-      column_to_rownames(abund_a, var = "point_id"))%>% 
+      column_to_rownames(abund, var = "point_id"))%>% 
       enframe(name = "point_id", value = "richness"),
     diversity(
-      column_to_rownames(abund_a, var = "point_id")) %>% 
+      column_to_rownames(abund, var = "point_id")) %>% 
       enframe(name = "point_id", value = "diversity")) %>% 
     left_join(landcover) %>%
     left_join(points)
   
 hist(data$richness)
+data %>% distinct(point_id, richness, owner) %>% 
+  filter(!is.na(owner)) %>% 
+  ggplot(aes(x = richness, color = owner)) + 
+  geom_density(size = 1) + 
+  scale_color_brewer(palette = "Paired") +
+  scale_x_continuous(breaks = 0:max(data$richness)) +
+  theme(panel.grid.minor = element_blank())
 hist(data$diversity)
+data %>% distinct(point_id, diversity, owner) %>% 
+  filter(!is.na(owner)) %>% 
+  ggplot(aes(x = diversity, color = owner)) + 
+  geom_density(size = 1) + 
+  scale_color_brewer(palette = "Paired") +
+  scale_x_continuous(breaks = 0:max(data$diversity)) +
+  theme(panel.grid.minor = element_blank())
 
 data %>% 
   filter(!is.na(radius)) %>% 
+  # group_by(property_id) %>% 
+  # sample_n(size = 100, replace = T) %>% 
   pivot_longer(
     cols = cropland:protected, 
     values_to = "proportion", 
     names_to = "metric") %>% 
-  ggplot(aes(x = proportion, y = diversity)) +
-    geom_jitter(alpha = 0.15, size = 0.25) +
+  ggplot(
+    aes(
+      x = proportion, 
+      y = diversity, 
+      group = owner, 
+      color = owner)) +
+    geom_point(alpha = 0.15, size = 0.2) +
     facet_grid(rows = vars(metric), cols = vars(radius)) +
-    geom_smooth(method = "lm")
+    scale_color_brewer(palette = "Paired") +
+    geom_smooth(method = "lm", se = FALSE) +
+  theme_bw(base_size = 15) +
+  theme(panel.grid = element_blank())
 
 data %>% 
-  filter(!is.na(owner)) %>% 
-  ggplot(aes(x = owner, y = diversity, fill = owner)) +
+  filter(!is.na(owner), radius == 1000) %>% 
+  ggplot(aes(x = owner, y = richness, fill = owner)) +
   geom_boxplot() +
-  scale_fill_brewer(palette = "Paired")
+  scale_fill_brewer(palette = "Paired") +
+  theme_bw(base_size = 15)
 
-  
+# Do owner types have different landcover
+
+aov(
+  formula = grassland ~ owner, 
+  data = 
+    filter(data, radius == 1000) %>% 
+    group_by(property_id) %>% 
+    sample_n(5, replace = T)) %>% 
+  TukeyHSD()
+
+# How many points
+points %>% 
+  count(owner) %>% st_drop_geometry() %>% 
+  left_join(
+  # How many visits per point
+  visits %>% 
+    count(point_id) %>% 
+    left_join(points) %>% 
+    group_by(owner) %>% 
+    summarize(visits_per_point = mean(n), se = sd(n)/sqrt(length(n))))
