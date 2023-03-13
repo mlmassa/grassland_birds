@@ -6,10 +6,10 @@ title: |
 author: 
   - Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
   # - Thomas L. Serfass, Frostburg State University, 101 Braddock Road, Frostburg, MD 21532, USA
-  # - Amy E. M. Johnson, Smithsonian Conservation Biology Institute, 1500 Remount Road, Front Royal, VA 22630, USA
-  # - Elizabeth R. Matthews, National Park Service, 1100 Ohio Drive SW, Washington, DC 20242, USA
-  # - W. Gregory Shriver, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
-  # - Emily B. Cohen, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
+  - Amy E. M. Johnson, Smithsonian Conservation Biology Institute, 1500 Remount Road, Front Royal, VA 22630, USA
+  - Elizabeth R. Matthews, National Park Service, 1100 Ohio Drive SW, Washington, DC 20242, USA
+  - W. Gregory Shriver, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
+  - Emily B. Cohen, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
 output: 
   bookdown::word_document2:
     reference_docx: 'template_simple.docx'
@@ -27,7 +27,6 @@ csl: ./condor_style.csl
 link-citations: yes
 ---
 ```{r setup, include = F}
-
 # Don't show code chunks
 knitr::opts_chunk$set(message = F, warning = F, echo = F)
 
@@ -37,7 +36,6 @@ library(kableExtra)
 library(flextable)
 library(tidyverse)
 library(ggpubr)
-library(unmarked)
 source('scripts/wrangling/tidy_method_unmarked.R')
 
 # Don't show NAs in kables
@@ -62,7 +60,7 @@ theme_set(
 
 *Correspondence*: Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA. Email: megan.massa@umces.edu
 
-**KEYWORDS** `r paste(sort(c("grassland birds", "protected areas", "working lands")), collapse = ", ")`
+**KEYWORDS** `r paste(sort(c("grassland birds", "protected areas", "public lands", "working lands")), collapse = ", ")`
 
 \newpage
 
@@ -76,27 +74,62 @@ theme_set(
 
 Biodiversity is in decline. 
 Avian biodiversity in particular.
-Particularly grasslands.
-Protected areas are an important way to maintain biodiversity.
-But working lands not under strict protection are also important.
+Protected areas are a vital strategy in the maintenance of biodiversity in the face of these declines.
+They are insulated from development []
+and exhibit higher biotic integrity than surroundings [].
+Insulation from the pressures of the surrounding landscape can create a safeguarding effect where bird species show better long-term population growth rates inside protected areas than outside [@dettling2021].
+However, publicly-owned lands are limited in extent and coverage of habitat types, and their creation has stagnated in the US in recent decades [].
+Protected areas alone are not sufficient to conserve biodiversity.
 
-Summarize research on community index (forest focused) and role of protected areas (not focused on grassland birds in this region).
+Privately-owned lands are also important for conservation.
+But working lands not under strict protection are also important.
+Grasslands are special: they require constant maintenance.
+In this region that maintenance on public lands is usually mowing.
+On private lands it can be mowing, crop harvest, and grazing.
+Private lands can be better for grassland species.
+However, management plays a role.
+Management practices that favor grassland birds are often more expensive, leading to lack of widespread adoption [@atwood2017; @troy2005].
 Role of easements.
+Conservation easements can provide equal or superior ecosystem services [@villamagna2015].
+One example of easements is the U.S. Department of Agriculture's Conservation Reserve Program (CRP), which removes cropland from production through limited-term conservation easements.
+In the Midwest, Conservation Reserve Program lands were better than public lands [@cunningham2005].
+And CRP had higher grassland bird abundance than fields not in easement, which primarily were used for row crops [@best1997].
+Also 5/12 grassland species were significantly more abundance on private lands than public lands [@ahlering2019].
+
+Indicators of ecosystem integrity and health based on birds in the eastern US such as the Bird Community Index these are typically focused on forest and edge species [@oconnell1998, @canterbury2000; @goodwin2014].
+Not intended for communities in rare habitats.
+Also used in grasslands [@coppedge2006; @bradford1998].
 
 We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of protected areas and private land for grassland bird conservation.
-Specifically, we examined bird populations in four national battlefield parks and on XXX properties enrolled in Virginia Working Landscapes
-We hypothesized that protected areas would host higher grassland bird richness and diversity, and that 
+These areas were monitored as part of two separate projects with compatible survey methodologies conducted by the National Park Service Inventory and Monitoring Program and the Smithsonian's Virginia Working Landscapes. 
+We hypothesized that protected areas would host higher grassland bird richness and diversity, and that surrounding development would have a more negative impact on birds on non-protected properties.
 
 # Methods
 
 <!-- Provide enough information to enable readers to replicate and critically evaluate the research. Describe statistical tests and procedures. Cite statistical software and analysis programs. Explain how summary statistics are reported in Results, e.g., means ± 1 SE.  -->
 
+## Data sources
+
 The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
-Virginia Working Landscapes
+Surveys occurred between 2014-2019 and in 2021 on four national battlefield parks in northern Virginia, central Maryland, and eastern West Virginia.
+
+Virginia Working Landscapes is a research program conducted by the Smithsonian Conservation Biology Institute in Front Royal, Virginia. 
+The program conducted surveys in 16 counties in northern Virginia from 2012-2022 on primarily privately-owned land including sites with and without conservation easements. 
+It also conducted some surveys on protected areas.
+
+We used the USGS Protected Areas Database of the United States version 3.0 [@pad] to assign each survey point a classification as public land (overlapping a protected area owned by federal, state, or local government, or an NGO), private easement (overlapping a protected area owned privately), or private unprotected (no overlap with protected areas). 
+
+## Point counts
+
+
+
+For each point count survey, we calculated richness, abundance, Shannon entropy (commonly called diversity, but see @jost2006).
+
+Calculated richness and Shannon index of grassland species using the R package "vegan" [@oksanen2022]. 
+We transformed Shannon index into Hill number to get an effective number of species [@jost2006].
+The advantage of hill numbers is that they can be effectively compared and obey an intuitive doubling property that accurately reflects proportional differences in assemblies [@chao2014].
 
 We classified species as obligate and facultative grassland-breeders following @vickery1999 Table \@ref(tab:species)). 
-
-Calculated richness and Shannon diversity of grassland species using the R package "vegan" [@oksanen2022]
 
 Modeled
 
@@ -105,14 +138,20 @@ Although abundance can be modeled as a hierarchical process
 We performed all analyses with program R version 4.1.2 [@rcoreteam2022]. 
 
 ```{r species}
-read_rds("data/processed/sp_grs_ch2.rds") %>% 
+sp_grs <-
+  read_rds("data/processed/sp_grs_ch2.rds") %>% 
   select(
     `Common name` = common_name,
     `Scientific name` = sci_name,
-    Designation = status) %>% 
-  flextable() %>% 
+    Designation = status)
+
+flextable(sp_grs) %>% 
   set_caption(
-    "Grassland birds detected. Designation from Vickery et al. (1999).") %>% 
+    paste0("Bird species detected with designation as obligate (", 
+    nrow(sp_grs[sp_grs$Designation == "obligate",]),
+    ") or facultative (",
+    nrow(sp_grs[sp_grs$Designation == "facultative",]),
+    ") grassland users based on Vickery et al. (1999).")) %>% 
   theme_booktabs(bold_header = TRUE) %>% 
   autofit() %>% 
   fit_to_width(max_width = 6.5) %>% 
@@ -128,6 +167,8 @@ read_rds("data/processed/sp_grs_ch2.rds") %>%
 # Discussion
 
 <!-- Begin with a statement that summarizes the study’s main findings. Develop the significance and importance of the results and set them into a framework of previous research. Additional statistical tests and results are inappropriate here except in unusual cases. If you have a Conclusion section, list it as a subheading within the Discussion. -->
+
+Development of spatially-explicit models of grassland bird diversity for this region could help target conservation easement activity throughout the Piedmont region.
 
 
 # Acknowledgments
