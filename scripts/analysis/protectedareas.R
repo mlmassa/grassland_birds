@@ -485,9 +485,10 @@ data <-
       enframe(name = "point_id", value = "richness"),
     diversity(
       column_to_rownames(abund, var = "point_id")) %>% 
-      enframe(name = "point_id", value = "diversity")) %>% 
-    left_join(landcover) %>%
-    left_join(points)
+      enframe(name = "point_id", value = "shannon")) %>% 
+  mutate(hill = exp(shannon)) %>% 
+  #left_join(landcover) %>%
+  left_join(points)
   
 hist(data$richness)
 data %>% distinct(point_id, richness, owner) %>% 

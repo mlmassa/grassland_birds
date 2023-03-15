@@ -42,7 +42,7 @@ source('scripts/wrangling/tidy_method_unmarked.R')
 options(knitr.kable.NA = '')
 
 # If simple template, Flextable defaults to Calibri 11. Otherwise, TNR 12
-if (rmarkdown::metadata$output$`bookdown::word_document2`$reference_docx == 'template_simple.docx')
+if (rmarkdown::metadata$output$`bookdown::word_document2`$reference_docx == "template_simple.docx")
   set_flextable_defaults(font.family = 'Calibri', font.size = 11) else
     set_flextable_defaults(font.family = 'Times New Roman', font.size = 12) 
 
@@ -72,43 +72,59 @@ theme_set(
 
 <!-- This section provides your research aims and significance and places it within the framework of the existing literature. The last Introduction paragraph typically provides the study’s hypotheses and testable predictions. Use citations judiciously; most points can be supported by three or fewer citations. Long lists of citations are seldom required and detract from the readability of the manuscript. -->
 
-Biodiversity is in decline. 
-Avian biodiversity in particular.
-Protected areas are a vital strategy in the maintenance of biodiversity in the face of these declines.
-They are insulated from development []
-and exhibit higher biotic integrity than surroundings [].
-Insulation from the pressures of the surrounding landscape can create a safeguarding effect where bird species show better long-term population growth rates inside protected areas than outside [@dettling2021].
-However, publicly-owned lands are limited in extent and coverage of habitat types, and their creation has stagnated in the US in recent decades [].
-Protected areas alone are not sufficient to conserve biodiversity.
+<!-- Biodiversity decline -->
+Biodiversity loss is a pressing global issue driven by human modification of ecosystems, including habitat loss and degradation.
+The expansion and intensification of agriculture are major contributors to biodiversity loss worldwide [@maxwell2016].
+In North America, population declines of birds that rely on grassland habitats have been driven by these factors [@stanton2018; @hill2014], with a 53% decrease in populations since 1970 [@rosenberg2019].
+These declines have made this guild a high priority for conservation efforts [@brennan2005].
+The collapse of grassland bird populations has been particularly dramatic in the eastern US [@sauer2017], largely due to the loss of pasture and remaining historical grasslands to afforestation, development, and intensive agriculture [@brennan2005].
 
-Privately-owned lands are also important for conservation.
-But working lands not under strict protection are also important.
-Grasslands are special: they require constant maintenance.
-In this region that maintenance on public lands is usually mowing.
-On private lands it can be mowing, crop harvest, and grazing.
-Private lands can be better for grassland species.
-However, management plays a role.
-Management practices that favor grassland birds are often more expensive, leading to lack of widespread adoption [@atwood2017; @troy2005].
-Role of easements.
-Conservation easements can provide equal or superior ecosystem services [@villamagna2015].
-One example of easements is the U.S. Department of Agriculture's Conservation Reserve Program (CRP), which removes cropland from production through limited-term conservation easements.
-In the Midwest, Conservation Reserve Program lands were better than public lands [@cunningham2005].
-And CRP had higher grassland bird abundance than fields not in easement, which primarily were used for row crops [@best1997].
-Also 5/12 grassland species were significantly more abundance on private lands than public lands [@ahlering2019].
+<!-- Protected areas -->
+Protected areas are a vital strategy for maintaining biodiversity in the face of population declines.
+These areas can be insulated from, though not immune to, surrounding sensory pollution [@buxton2017] and land-use changes [@andam2008].
+Such insulation from the pressures of the surrounding human-dominated landscape can create a safeguarding effect where bird species show better long-term population growth rates inside protected areas than outside [@dettling2021].
+However, publicly-owned lands are limited in extent and coverage of habitat types, often under-representing grassland species [@alexander2017; @grand2019].
+The impact of protected areas on eastern grassland birds is under-studied; most indicators for the health of public lands in this region such as the Bird Community Index have focused on forest and edge species [@ladin2016; @oconnell1998; @canterbury2000; @goodwin2014].
+Public lands are also faced by management challenges that can limit their effectiveness as protected areas.
+For example, financial support for public lands has stagnated in the US in recent decades, leading to large management backlogs [@watson2014].
+These backlogs can be particularly important in managing ephemeral grasslands that can require annual to biannual disturbance to remain suitable habitat for species of concern.
+At a global scale, protected areas have fallen short of target goals set by the Convention on Biological Diversity [@watson2014].
+Although important, protected areas alone are not sufficient to conserve biodiversity.
 
-Indicators of ecosystem integrity and health based on birds in the eastern US such as the Bird Community Index these are typically focused on forest and edge species [@oconnell1998, @canterbury2000; @goodwin2014].
-Not intended for communities in rare habitats.
-Also used in grasslands [@coppedge2006; @bradford1998].
+<!-- Private areas, esp for grasslands -->
+Privately-owned lands are also essential for conservation, and integrating public and private lands is necessary to conserve grassland birds.
+The majority of land in the US is privately owned, and roughly 52% of land in the US is used for agricultural production [@usdaers].
+Many grassland species are considered area-sensitive, so increasing the total area of protected grassland will be necessary to conserve them.
+However, area alone is not sufficient to protect grassland bird populations in agricultural landscapes when land management degrades habitat [@with2008], and even small patches can be beneficial to grassland bird populations when managed with bird conservation in mind [@weidman2011].
+A patchwork of agricultural and working lands provide human needs through agriculture and can function complementary to protected areas in the maintenance of biodiversity [@kremen2018].
+Agricultural practices meant to preserve wildlife and spare land from production can result in both high crop yield and grassland ecosystem functioning [@green2005].
+Working lands can have same community composition as protected areas, though this effect has been shown most strongly in agroforestry [@karp2019].
+Individual management decisions on unprotected working lands, often motivated by the need for yield and annual fluctuations in climate, have the power to drive grassland bird populations at a regional scale [@allen2021].
+However, management practices that favor grassland birds are often more expensive, leading to lack of widespread adoption [@atwood2017; @troy2005].
 
-We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of protected areas and private land for grassland bird conservation.
-These areas were monitored as part of two separate projects with compatible survey methodologies conducted by the National Park Service Inventory and Monitoring Program and the Smithsonian's Virginia Working Landscapes. 
-We hypothesized that protected areas would host higher grassland bird richness and diversity, and that surrounding development would have a more negative impact on birds on non-protected properties.
+Land easements are one strategy to promote wildlife-friendly land use on private lands.
+These can take the form of land-sparing agreements and cost-sharing programs that encourage the adoption of certain management practices.
+Conservation easements can provide equal or superior ecosystem services as protected public lands [@villamagna2015] and protect grassland habitat from conversion to degrading land use [@claassen2017].
+One form of easement is the US Department of Agriculture's Conservation Reserve Program (CRP), which removes cropland from production through limited-term voluntary conservation easements on private lands.
+A large body of research suggests that these easements can host high populations of regionally declining grassland species [@johnson1993; @johnson1993a; @ribic2009a; @herkert2009].
+CRP easements on private lands can even outperform protected public lands and unprotected private lands for grassland birds [@cunningham2005; @best1997; @ahlering2019].
+
+<!-- Local to regional indicators for grassland health -->
+Public lands, alongside conservation measures such as CRP enrollment, cost-share practices, and prairie restoration, can have impacts from the local [@allen2019] to regional [@allen2021] to landscape scale [@pavlackyjr.2022; @veech2006].
+There are many potential scales over which land use and land protection could impact grassland bird communities, so determining the scale of effect, that is, the scale at which communities respond most strongly to the metric, is crucial [@miguet2016].
+We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of protected areas and private land at local and regional scales for grassland bird conservation.
+These areas were monitored as part of two separate projects conducted by the National Park Service Inventory and Monitoring Program (NPS I&M) and the Smithsonian's Virginia Working Landscapes (VWL), a voluntary conservation program. 
+We hypothesized that protected areas can safeguard grassland bird diversity in this region. 
+We predicted that 
+(1) private easements and public lands would have higher grassland species richness, abundance, and diversity relative to unprotected private lands, 
+(2) the proportion of protected area in the surrounding landscape would increase richness, abundance, and diversity, and 
+(3) that increased urbanization in the surrounding landscape would have a more negative impact on birds on private unprotected lands than on birds on public lands.
 
 # Methods
 
 <!-- Provide enough information to enable readers to replicate and critically evaluate the research. Describe statistical tests and procedures. Cite statistical software and analysis programs. Explain how summary statistics are reported in Results, e.g., means ± 1 SE.  -->
 
-## Data sources
+## Monitoring programs
 
 The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
 Surveys occurred between 2014-2019 and in 2021 on four national battlefield parks in northern Virginia, central Maryland, and eastern West Virginia.
@@ -117,23 +133,35 @@ Virginia Working Landscapes is a research program conducted by the Smithsonian C
 The program conducted surveys in 16 counties in northern Virginia from 2012-2022 on primarily privately-owned land including sites with and without conservation easements. 
 It also conducted some surveys on protected areas.
 
-We used the USGS Protected Areas Database of the United States version 3.0 [@pad] to assign each survey point a classification as public land (overlapping a protected area owned by federal, state, or local government, or an NGO), private easement (overlapping a protected area owned privately), or private unprotected (no overlap with protected areas). 
+## Study area
+
+The study took place within a 16-county area of Virginia, with two additional sites in Maryland and one in West Virginia. A total of XXX points were surveyed.
+Map
+
+```{r map}
+knitr::include_graphics("output/plots/maps/protarea_points.png")
+```
 
 ## Point counts
 
 
 
-For each point count survey, we calculated richness, abundance, Shannon entropy (commonly called diversity, but see @jost2006).
+## Analysis
 
-Calculated richness and Shannon index of grassland species using the R package "vegan" [@oksanen2022]. 
+We used the USGS Protected Areas Database of the United States version 3.0 [@pad] to assign each survey point a classification as public land (overlapping a protected area owned by federal, state, or local government, or an NGO), private easement (overlapping a protected area owned privately), or private unprotected (no overlap with protected areas). 
+To examine the impact of land cover and protected area cover at multiple spatial scales, er extracted the proportion of protected area coverage alongside the proportion of different land cover types [@nlcd2019] at buffer radii ranging from 200 m to 10 km.
+
+We classified species as obligate and facultative grassland-breeders following @vickery1999 (Table \@ref(tab:species)). 
+We calculated average abundance per survey of facultative and obligate grassland species. 
+We calculated mean annual grassland species richness by site. 
+We avoided pooling richness across years because points in the NPS data set were surveyed in as many as 7 years and inevitably had a higher total number of grassland species detected due to singleton rarities, while most VWL points were only surveyed in a single year.
+Abundance and richness were compared among ownership types using (ANOVA?)
+
+We calculated the Shannon index (commonly referred to as diversity, but see @jost2006) of grassland species in each ownership type using the R package "vegan" [@oksanen2022]. 
 We transformed Shannon index into Hill number to get an effective number of species [@jost2006].
-The advantage of hill numbers is that they can be effectively compared and obey an intuitive doubling property that accurately reflects proportional differences in assemblies [@chao2014].
+The advantage of Hill numbers is that they can be effectively compared and obey an intuitive doubling property that accurately reflects proportional differences in assemblies [@chao2014].
 
-We classified species as obligate and facultative grassland-breeders following @vickery1999 Table \@ref(tab:species)). 
-
-Modeled
-
-Although abundance can be modeled as a hierarchical process
+We modeled Hill number and abundance as a function of proportion land cover and proportion protected area.
 
 We performed all analyses with program R version 4.1.2 [@rcoreteam2022]. 
 
@@ -163,10 +191,22 @@ flextable(sp_grs) %>%
 
 <!-- Include only results pertinent to the hypotheses being tested or questions raised in the Introduction section and treated in the Discussion. Use the same number of decimal places for means and estimates of uncertainty (e.g., 38.9 ± 1.2, not 38.9 ± 1.23); usually only one or two decimal places are necessary. Round percentages to whole numbers. The text should not duplicate material presented in tables or figures. Clearly present relevant sample sizes, degrees of freedom, values of statistical tests, and P-values. Test statistics should be rounded to one (t-test, C2, F, etc.) or two (r, r2, etc.) decimal places. See Statistical Details in the Style Sheet for more information. -->
 
+## Public vs private context
+
+The public lands on which the survey points were located had majority forest cover but also grassland.
+Private easements containing survey points were primarily grassland and cropland.
+Private unprotected points were surrounded by grassland and cropland.
+
+## Abundance of grassland birds on pri
+
+## Richness, diversity
 
 # Discussion
 
 <!-- Begin with a statement that summarizes the study’s main findings. Develop the significance and importance of the results and set them into a framework of previous research. Additional statistical tests and results are inappropriate here except in unusual cases. If you have a Conclusion section, list it as a subheading within the Discussion. -->
+
+Farms enrolled in a voluntary conservation initiative are not the best sample of private unprotected lands in the region.
+Farming was conducted on parkland, making it atypical to NPS's mission of preservation.
 
 Development of spatially-explicit models of grassland bird diversity for this region could help target conservation easement activity throughout the Piedmont region.
 
