@@ -3,31 +3,35 @@
 # Setup -------------------------------------------------------------------
 
 library(tidyverse)
+library(tigris)
 library(sf)
 library(tmap)
 theme_set(theme_bw())
+
+# Download of shapefile: Keep download and cache to speed things up.
+options(tigris_use_cache = TRUE, keep_zipped_shapefile = TRUE)
 
 # Import data -------------------------------------------------------------
 
 # Protected areas database
 pl <-
-  st_read("data/raw/PADUS3_0Combined_Region1.shp") %>% 
-  filter(State_Nm %in% c("VA", "MD", "WV")) %>% 
-  st_make_valid() %>% 
-  st_transform(crs = 4326)
+  st_read("data/processed/prot_areas.shp")
 
 # Data points surveyed
 pts <-
-  bind_rows(
-    VWL = 
-      read_rds("data/processed/vwl_birds.rds")$points %>% 
-      mutate(property_id = as.character(property_id)),
-    NPS = 
-      read_rds("data/processed/birds.rds")$points %>% 
-      rename(property_id = park, point_id = point_name),
-    .id = "source") %>% 
-  filter(!is.na(long), !is.na(lat)) %>% 
-  st_as_sf(coords = c("long", "lat"), crs = 4326)
+  read_rds("data/processed/ch2_combined_birds.rds")$points
+
+properties <-
+  pts %>% 
+  select(point_id, property_id) %>% 
+  group_by(property_id) %>% 
+  summarize(st_union(geometry)) %>% 
+  st_centroid()
+
+states <- # NAD83
+  states(cb = TRUE, resolution = '5m') %>% 
+  filter(NAME %in% c("Virginia", "West Virginia", "Maryland", "District of Columbia")) %>% 
+  st_transform(crs = st_crs(properties))
 
 # In which lands were surveys located -------------------------------------
 
@@ -70,6 +74,52 @@ tm_shape(pts) +
     popup.vars = c(
       "Data source" = "source",
       "Property ID" = "property_id"))
+
+
+# Map for chapter ---------------------------------------------------------
+
+bbox <-
+  st_buffer(properties, dist = 8000) %>% 
+  st_bbox()
+
+ggplot() +
+  geom_sf(
+    data = pl,
+    aes(fill = owner, color = owner),
+    size = 0.25) +
+  scale_fill_discrete(type = c("#ACCCE4", "#B8DD81", "gray90")) +
+  scale_color_discrete(type = c("#ACCCE4", "#B8DD81", "gray90")) +
+# US state borders
+  geom_sf(
+    data = states, 
+    size = 0.5, 
+    fill = NA,
+    color = 'gray50') +
+# properties
+  geom_sf(
+    data = properties,
+    color = "black",
+    shape = 1,
+    stroke = 1,
+    size = 3) +
+  coord_sf(
+    xlim = c(bbox$xmin, bbox$xmax),
+    ylim = c(bbox$ymin, bbox$ymax)
+  ) +
+  # Edit legend
+  labs(
+    fill = "Protected areas",
+    color = "Protected areas") +
+  theme(
+    panel.grid = element_blank(),
+    legend.position = "top")
+
+ggsave(
+  "output/plots/maps/protarea_properties.png", 
+  width = 6,
+  height = 6,
+  units = "in",
+  dpi = 300)
 
 # Static maps -------------------------------------------------------------
 

@@ -35,7 +35,11 @@ library(knitr)
 library(kableExtra)
 library(flextable)
 library(tidyverse)
+library(ggtext)
+library(glue)
+library(sf)
 library(ggpubr)
+library(vegan)
 source('scripts/wrangling/tidy_method_unmarked.R')
 
 # Don't show NAs in kables
@@ -56,6 +60,28 @@ theme_set(
     plot.title = element_text(size = 10),
     panel.grid = element_blank(),
     strip.background = element_blank()))
+
+# Import data
+# Read in data: points, visits, birds, species
+read_rds("data/processed/ch2_combined_birds.rds") %>% 
+  list2env(.GlobalEnv)
+
+points <- st_drop_geometry(points)
+
+# Read in covariates
+landcover <- read_rds("data/processed/ch2_pointcovs.rds")
+
+# Remove all incidentals
+birds <- 
+  filter(birds, incidental == 0) %>% select(-incidental)
+
+# Set theme for plotting
+theme_set(
+  theme_bw(base_size = 10) +
+  theme(strip.background = element_blank()))
+
+# Set palette for fac/ob
+pal <- c(facultative = "gray", obligate = "black")
 ```
 
 *Correspondence*: Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA. Email: megan.massa@umces.edu
@@ -67,6 +93,7 @@ theme_set(
 # Abstract
 
 <!-- The Abstract is perhaps the most important paragraph in a paper. Avoid writing it as a mere summary of the research. Place key results in the abstract’s first two sentences – don't bury the lede. Do not include lists of common methods, discursive explanations of what you set out to accomplish, or citations. Use the abstract and title to highlight the paper’s keywords. Maximum word count is 350.  -->
+
 
 # Introduction
 
@@ -124,61 +151,75 @@ We predicted that
 
 <!-- Provide enough information to enable readers to replicate and critically evaluate the research. Describe statistical tests and procedures. Cite statistical software and analysis programs. Explain how summary statistics are reported in Results, e.g., means ± 1 SE.  -->
 
-## Monitoring programs
-
-The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
-Surveys occurred between 2014-2019 and in 2021 on four national battlefield parks in northern Virginia, central Maryland, and eastern West Virginia.
-
-Virginia Working Landscapes is a research program conducted by the Smithsonian Conservation Biology Institute in Front Royal, Virginia. 
-The program conducted surveys in 16 counties in northern Virginia from 2012-2022 on primarily privately-owned land including sites with and without conservation easements. 
-It also conducted some surveys on protected areas.
-
 ## Study area
 
-The study took place within a 16-county area of Virginia, with two additional sites in Maryland and one in West Virginia. A total of XXX points were surveyed.
+The study took place within the 16-county VWL study area in the Piedmont and Valley and Ridge regions of Virginia, with two additional sites in central Maryland and one in West Virginia. 
+A total of 
+Properties consisted of
+Trained observers conducted surveys on `r n_distinct(points$point_id)` points among `r n_distinct(points$property_id)`properties from `r min(visits$year)` to `r max(visits$year)`.
+Points were located on public
+
 Map
 
 ```{r map}
 knitr::include_graphics("output/plots/maps/protarea_points.png")
 ```
 
-## Point counts
+## Monitoring programs
 
+We pooled data from two breeding-season bird monitoring programs: one conducted entirely on public lands within NPS and one conducted on a mix of public and private lands throughout the region by VWL.
+The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
+In total, the combined dataset consisted of 760 points on 143 properties.
+NPS I&M surveys occurred between 2014-2019 and in 2021 at 242 points on four national battlefield parks in northern Virginia, central Maryland, and eastern West Virginia.
+VWL conducted surveys at 518 points on 140 properties from 2012-2022.
+Both programs conducted surveys at Manassas National Battlefield Park in Manassas, Virginia.
+NPS points were surveyed annually (range: 3-7 years) while VWL points were typically only visited in one year (range: 1-3 years).
+NPS-surveyed properties were more densely-surveyed (range: 29-100 points per property), while VWL-surveyed properties were less so (range: 1-21 points per property).
 
+Survey methods were sufficiently similar between these two programs.
+Point counts consisted of a 10 minute count conducted by a single observer (though VWL surveys also typically had a non-observer scribe present) from 30 minutes before sunrise until 5 hours after sunrise.
+Observers performed a fixed-radius count, recording birds within 100 m.
+Birds observed outside of this time and distance window were designated as incidentals and were excluded from analysis.
+The two programs differed in their coding of weather conditions and subdivisions of time and distance bands, which were not relevant for this analysis.
 
 ## Analysis
 
 We used the USGS Protected Areas Database of the United States version 3.0 [@pad] to assign each survey point a classification as public land (overlapping a protected area owned by federal, state, or local government, or an NGO), private easement (overlapping a protected area owned privately), or private unprotected (no overlap with protected areas). 
-To examine the impact of land cover and protected area cover at multiple spatial scales, er extracted the proportion of protected area coverage alongside the proportion of different land cover types [@nlcd2019] at buffer radii ranging from 200 m to 10 km.
+To examine the impact of land cover and protected area cover at multiple spatial scales, we extracted the proportion of protected area coverage alongside the proportion of different land cover types [@nlcd2019] at buffer radii ranging from 200 m to 10 km.
+We reclassified land cover into two types: forest (consisting of deciduous, evergreen, mixed forest, and woody wetlands) and developed (consisting of low,  medium, and high-intensity urban cover). 
+These two types of land cover are known to have impacts on grassland species [@irvin2013; @buxton2016].
+<!-- We also calculated the contiguous area of the protected area in which each public or private easement point was located. -->
 
 We classified species as obligate and facultative grassland-breeders following @vickery1999 (Table \@ref(tab:species)). 
 We calculated average abundance per survey of facultative and obligate grassland species. 
-We calculated mean annual grassland species richness by site. 
-We avoided pooling richness across years because points in the NPS data set were surveyed in as many as 7 years and inevitably had a higher total number of grassland species detected due to singleton rarities, while most VWL points were only surveyed in a single year.
-Abundance and richness were compared among ownership types using (ANOVA?)
-
+We calculated mean annual grassland species richness by point. 
+To prevent differences in sampling intensity form influencing richness, we used only 3 visits per point and did not pool data across years because points in the NPS data set would have inevitably had a higher richness due to singleton rarities accumulated over multiple years of surveys at each point.
 We calculated the Shannon index (commonly referred to as diversity, but see @jost2006) of grassland species in each ownership type using the R package "vegan" [@oksanen2022]. 
 We transformed Shannon index into Hill number to get an effective number of species [@jost2006].
 The advantage of Hill numbers is that they can be effectively compared and obey an intuitive doubling property that accurately reflects proportional differences in assemblies [@chao2014].
+We compared abundance and richness among ownership types using one-way analysis of variance (ANOVA). 
+With significant ANOVA results (*P*<0.05), we performed Tukey post-hoc pairwise  comparisons of abundance and richness.
 
-We modeled Hill number and abundance as a function of proportion land cover and proportion protected area.
-
-We performed all analyses with program R version 4.1.2 [@rcoreteam2022]. 
+We modeled Hill number and total grassland species abundance as a function of proportion land cover.
+We ranked models using Akaike's information criteria AIC [@akaike1974], comparing to a static null model and one with only land ownership.
+To investigate the safeguarding effect of public lands, we also investigated whether ownership type had an interactive effect on
+All analyses were performed using program R version 4.1.2 [@rcoreteam2022]. 
 
 ```{r species}
 sp_grs <-
-  read_rds("data/processed/sp_grs_ch2.rds") %>% 
+  read_rds("data/processed/sp_grs_ch2.rds")
+
+sp_grs %>% 
   select(
     `Common name` = common_name,
     `Scientific name` = sci_name,
-    Designation = status)
-
-flextable(sp_grs) %>% 
+    Designation = status) %>% 
+flextable() %>% 
   set_caption(
     paste0("Bird species detected with designation as obligate (", 
-    nrow(sp_grs[sp_grs$Designation == "obligate",]),
+    nrow(sp_grs[sp_grs$status == "obligate",]),
     ") or facultative (",
-    nrow(sp_grs[sp_grs$Designation == "facultative",]),
+    nrow(sp_grs[sp_grs$status == "facultative",]),
     ") grassland users based on Vickery et al. (1999).")) %>% 
   theme_booktabs(bold_header = TRUE) %>% 
   autofit() %>% 
@@ -193,13 +234,244 @@ flextable(sp_grs) %>%
 
 ## Public vs private context
 
-The public lands on which the survey points were located had majority forest cover but also grassland.
-Private easements containing survey points were primarily grassland and cropland.
-Private unprotected points were surrounded by grassland and cropland.
+Points located within public lands and easements had higher proportion of surrounding protected area at small spatial scales due to their placement within such protected areas (Figure \@ref(fig:protradius)).
+However, at the largest spatial scales, points were not surrounded by as much protection.
+The proportion of protected area within 8 km differed by land ownership type (*F~(2,757)~* = 44.0, *P*<0.001).
+At this scale, points on public lands were surrounded by less protected area than those on private easements (*P*<0.001) or private unprotected lands (*P*=0.01).
 
-## Abundance of grassland birds on pri
+```{r protradius, fig.width = 6.5, fig.height = 3, dpi = 300, fig.cap = "Proportion of surrounding protected land over increasing spatial scales from 200 m to 8 km. Each line represents a single point."}
 
-## Richness, diversity
+landcover %>% 
+  left_join(points) %>% 
+  mutate(radius_km = radius/1000) %>% 
+  ggplot(
+    aes(
+      x = radius_km, y = protected, 
+      group = interaction(point_id, owner),
+      color = owner)) + 
+  geom_line(alpha = 0.3) +
+  scale_color_brewer(palette = "Paired") +
+  facet_wrap(vars(owner)) +
+  scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
+  scale_x_continuous(expand = c(0, 0)) +
+  labs(
+    x = "Radius (km)", 
+    y = "Prop. protected area", 
+    fill = "Landowner") +
+  theme(
+    legend.position = "none",
+    panel.grid = element_blank())
+
+```
+
+## Richness, abundance, diversity
+
+While public lands had a slightly higher pooled grassland species richness (21 spp.) than private easements (19 spp.) or private unprotected land (17 spp.), annual richness per point per year (standardized for effort at 3 surveys per point per year) of all grassland species did not differ significantly by landowner type according to a one-way ANOVA (*F~(2,2075)~*=2.93, *P*=0.053; Figure \@ref(fig:richptyr)).
+We were interested in whether obligate species would respond more strongly than facultative species, given their stricter reliance on grassland habitat.
+Public lands had slightly lower richness of obligate (*P*=0.02) and facultative (*P*=0.03) species than private easements when those groups were considered alone (Figure \@ref(fig:richptyr)).
+Richness did not differ between private easements and private unprotected lands for obligate (*P*=0.91) or facultative (*P*=0.70) species.
+
+```{r richptyr, fig.width = 5, fig.height = 4, dpi = 300, fig.cap = "Mean annual richness of grassland species at each point by land ownership type. Error bars indicate SE."}
+# Richness per point-year (standard effort)
+rich_ptyr <-
+  bind_rows(
+    obligate =
+      birds %>% 
+      left_join(visits) %>% 
+      # Standard effort: 3 visits
+      filter(
+        visit <= 3, 
+        species %in% c(sp_ob)) %>% 
+      group_by(point_id, year) %>%  
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    facultative =
+       birds %>% 
+      left_join(visits) %>% 
+      # Standard effort: 3 visits
+      filter(
+        visit <= 3, 
+        species %in% c(sp_fac)) %>% 
+      group_by(point_id, year) %>%  
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    all_grass = 
+       birds %>% 
+      left_join(visits) %>% 
+      # Standard effort: 3 visits
+      filter(
+        visit <= 3, 
+        species %in% c(sp_ob, sp_fac)) %>% 
+      group_by(point_id, year) %>%  
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    .id = "status")
+
+# Plot
+ggplot(
+  data = rich_ptyr,
+  aes(
+    x = factor(
+      status, 
+      levels = c("obligate", "facultative", "all_grass"),
+      labels = c("obligate", "facultative", "obligate +\nfacultative")), 
+    y = mean_sp, 
+    fill = owner)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(
+      ymin = mean_sp - se, 
+      ymax = mean_sp + se),
+    position = position_dodge()) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    x = "", 
+    y = "Annual species richness per point", 
+    fill = "Landowner") +
+  theme(
+    legend.position = c(0.025, 0.975),
+    legend.background = element_blank(),
+    legend.justification = c(0, 1),
+    panel.grid = element_blank()) 
+
+```
+
+Mean abundance of grassland species was variable, with the most abundant obligates being Grasshopper Sparrow and Eastern Meadowlark (Figure \@ref(fig:abundbysurvey)).
+Together, these two species made up 33% of all individual grassland birds that were detected.
+Certain species (Loggerhead Shrike, Northern Harrier, Mallard, Dickcissel) were so rare that fewer than 20 individuals were observed across more than 6,000 surveys.
+
+```{r abundbysurvey, fig.width = 6.5, fig.height = 8, dpi = 300, fig.cap = "Mean abundance by land ownership type of all grassland species. Bolded species (top two rows) are obligate grassland breeders. Error bars indicate mean + SE."}
+
+spxvisit <- expand(birds, visit_id, species)
+
+abund_sp_bysurv <-
+  birds %>% 
+  left_join(visits) %>% 
+  group_by(visit_id, species) %>% 
+  summarize(n = n()) %>% 
+  right_join(spxvisit) %>% 
+  replace_na(list(n = 0)) %>% 
+  left_join(sp_grs) %>% 
+  left_join(visits) %>% 
+  left_join(points) %>% 
+  filter(species %in% c(sp_fac, sp_ob)) %>% 
+  group_by(owner, common_name) %>% 
+  summarize(
+    mean_birds_surv = mean(n, na.rm = T), 
+    se = sd(n, na.rm = T)/sqrt(length(n)),
+    .groups = "drop") %>% 
+  filter(!is.na(common_name)) %>% 
+  left_join(sp_grs)
+
+# Plot
+abund_sp_bysurv %>% 
+  mutate(
+    styled_name = if_else(
+      status == "obligate", 
+      glue("<b>{common_name}</b>"),
+      common_name)) %>% 
+ggplot(
+  aes(
+    x = styled_name,
+    y = mean_birds_surv, 
+    fill = owner)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(
+      color = owner,
+      ymin = mean_birds_surv - se, 
+      ymax = mean_birds_surv + se),
+    position = position_dodge()) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_color_brewer(palette = "Paired") +
+  labs(
+    y = "Mean abundance per survey", 
+    x = "", 
+    fill = "Landowner",
+    color = "Landowner") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  facet_wrap(vars(styled_name), ncol = 4, scales = "free") +
+  theme(
+    axis.text.y = element_text(size = 7),
+    strip.text = ggtext::element_markdown(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = c(0.75, 0.05),
+    legend.direction = "vertical",
+    legend.justification = c(1, 0),
+    legend.key.size = unit(10, "pt"),
+    panel.grid = element_blank()) 
+```
+
+```{r diversity, fig.width = 3.25, fig.height = 4, dpi = 300, fig.cap = "Shannon index H among land ownership types."}
+# Get total abundance (will be converted to relative automatically)
+abund <-
+  left_join(birds, visits) %>% 
+  count(visit_id, species) %>% 
+  # Get zeroes
+  right_join(spxvisit) %>% 
+  replace_na(list(n = 0)) %>% 
+  left_join(visits) %>% 
+  filter(species %in% sp_grs$species) %>% 
+  group_by(point_id, species) %>% 
+  summarize(
+    #max = max(n),
+    sum = sum(n),
+    #mean = mean(n)
+    #visits = length(n)
+    ) %>% 
+  pivot_wider(names_from = "species", values_from = "sum")
+
+landcover_wide <-
+  pivot_wider(
+    landcover,
+    names_from = radius, 
+    values_from = c(cropland:grassland, protected))
+
+# Method A
+data <-
+  full_join(
+    specnumber(
+      column_to_rownames(abund, var = "point_id"))%>% 
+      enframe(name = "point_id", value = "richness"),
+    diversity(
+      column_to_rownames(abund, var = "point_id")) %>% 
+      enframe(name = "point_id", value = "shannon")) %>% 
+  mutate(hill = exp(shannon)) %>% 
+  left_join(landcover_wide)
+
+# Plot
+data %>% 
+ggplot(aes(x = owner, y = shannon, fill = owner)) + 
+  geom_boxplot() +
+  scale_fill_brewer(palette = "Paired") +
+  labs(
+    fill = "Landowner",
+    y = "Shannon index <i>H</i>",
+    x = "") +
+  theme(
+    legend.position = "none",
+    axis.title.y = ggtext::element_markdown())
+
+
+```
+
+
+## Land cover models
+A comparison of the best-supported models for each land cover type
 
 # Discussion
 
@@ -208,25 +480,44 @@ Private unprotected points were surrounded by grassland and cropland.
 Farms enrolled in a voluntary conservation initiative are not the best sample of private unprotected lands in the region.
 Farming was conducted on parkland, making it atypical to NPS's mission of preservation.
 
-Development of spatially-explicit models of grassland bird diversity for this region could help target conservation easement activity throughout the Piedmont region.
-
+<!-- Next steps -->
+Development of spatially-explicit models of grassland bird diversity for this region that incorporate protected areas could help target conservation activity throughout the Piedmont region.
 
 # Acknowledgments
 
-Thank sponsors, everyone who helped with research, and reviewers
+We thank the National Park Service's Inventory and Monitoring Program, Virginia Working Landscapes, and the numerous field technicians and volunteers who collected data for both monitoring programs. 
+We also thank YOU for reviewing this draft with such a tight turnaround.
 
-**Funding statement**
+## Funding statement
 
-**Ethics statement**
+The component projects of this research were funded by the National Park Service and the Smithsonian Conservation Biology Institute.
 
-**Conflict of interest statement**
+## Ethics statement
 
-**Author contributions**
+No animals were handled or harmed during this observational study. 
+Procedures for these activities followed typical ethical standards for monitoring birds (https://birdnet.org/info-for-ornithologists/guidelines-english-3rd-edition-2010/).
 
-**Data availability**
+## Conflict of interest statement
+
+The authors declare no conflicts of interest.
+
+## Author contributions
+
+W.G.S., E.R.M., and A.E.J. contributed to the design and implementation of the monitoring programs.
+A.E.J. and M.M. collected data in the field.
+M.M. performed the analyses and wrote the manuscript with support from E.B.C. and A.E.J.
+All authors will review the results and will approve the final version of the manuscript.
+
+## Data availability
+
+Data are available on request from the authors, pending approval by the National Park Service and Smithsonian Conservation Biology Institute.
 
 # Tables
 
+Tables will be moved here when the paper is done.
+
 # Figures
+
+Figures will be moved here when the paper is done.
 
 # References

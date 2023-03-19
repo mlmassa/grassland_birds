@@ -7,6 +7,7 @@ library(ggtext)
 library(glue)
 library(sf)
 library(vegan)
+library(AICcmodavg)
 
 # Read in data: points, visits, birds, species
 read_rds("data/processed/ch2_combined_birds.rds") %>% 
@@ -20,13 +21,29 @@ birds <-
   filter(birds, incidental == 0) %>% select(-incidental)
 
 # Set theme for plotting
-theme_set(theme_bw(base_size = 12))
+theme_set(
+  theme_bw(base_size = 12) +
+  theme(strip.background = element_blank()))
 
 # Set palette for fac/ob
 pal <- c(facultative = "gray", obligate = "black")
 
+radii <- unique(landcover$radius)
 
 # Explore sampling data ---------------------------------------------------
+
+# How many points
+points %>% 
+  count(owner) %>% st_drop_geometry() %>% 
+  left_join(
+  # How many visits per point
+  visits %>% 
+    count(point_id) %>% 
+    left_join(points) %>% 
+    group_by(owner) %>% 
+    summarize(
+      visits_per_point = mean(n), 
+      se = sd(n)/sqrt(length(n))))
 
 # How many grassland species?
 nrow(sp_grs)
@@ -46,6 +63,13 @@ visits %>%
 
 # All species x visits
 spxvisit <- expand(birds, visit_id, species)
+
+# All species x ptyr
+spxptyr <- 
+  birds %>% 
+  left_join(visits %>% select(visit_id, point_id, year)) %>% 
+  mutate(ptyr = str_c(point_id, year)) %>% 
+  expand(ptyr, species)
 
 # How many detections?
 birds %>% 
@@ -107,12 +131,14 @@ visits %>%
       y = total_sp, 
       color = owner, 
       group = point_id),
-      alpha = 0.5) +
+      alpha = 0.6) +
     geom_smooth(
       aes(x = total_visits, y = total_sp, group = "owner"),
       method = NULL,
       formula = y ~ log(x+1),
       color = "black",
+      size = 0.5,
+      linetype = "dashed",
       se = F,
       fullrange = T) +
     scale_color_brewer(palette = "Paired") +
@@ -212,14 +238,18 @@ ggplot(
     x = "", 
     fill = "Landowner",
     color = "Landowner") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
   facet_wrap(vars(styled_name), ncol = 4, scales = "free") +
   theme(
     strip.text = ggtext::element_markdown(),
     axis.text.x = element_blank(),
     axis.ticks.x = element_blank(),
-    legend.position = c(1, 0),
-    legend.direction = "horizontal",
-    legend.justification = c(1,0))
+    legend.position = c(0.73, 0),
+    #legend.direction = "horizontal",
+    legend.justification = c(1,0),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank()) 
 
 ## Property total richness ----
 
@@ -235,14 +265,17 @@ birds %>%
 
 # And when standardized for effort, each public property had more grass spp...
 
+# Get properties with more than 3 points
 oversampled <- 
   count(st_drop_geometry(points), property_id) %>% 
   filter(n > 3)
 
+# Get properties with less than 3 points
 undersampled <-
   count(st_drop_geometry(points), property_id) %>% 
   filter(n < 3)
 
+# Get first year property was surveyed
 first_year <-
   visits %>% 
   left_join(points) %>% 
@@ -250,6 +283,7 @@ first_year <-
   filter(!is.na(owner)) %>% 
   summarize(first = min(year), last = max(year))
 
+# Take 3 points per property (exclude properties with <3 points)
 pts_sample <-
   points %>% 
   filter(property_id %in% oversampled$property_id) %>% 
@@ -262,6 +296,8 @@ pts_sample <-
       !property_id %in% undersampled$property_id)) %>% 
   pull(point_id)
 
+# Only take surveys 1-3 in first year surveyed
+# For a total of 3 surveys per property
 survey_sample <-
   visits %>% 
   left_join(first_year) %>% 
@@ -271,25 +307,59 @@ survey_sample <-
     visit <= 3)
 
 rich_prop_1yr <-
-  birds %>% 
-  filter(
-    visit_id %in% survey_sample$visit_id,
-    species %in% c(sp_ob, sp_fac)) %>% 
-  left_join(visits) %>% 
-  left_join(points) %>% 
-  group_by(property_id) %>% 
-  summarize(sp = length(unique(species))) %>% 
-  left_join(points) %>% 
-  group_by(owner) %>% 
-  summarize(
-    mean_sp = mean(sp), 
-    se = sd(sp)/sqrt(length(sp)))
+  bind_rows(
+    all_grass =
+      birds %>% 
+      filter(
+        visit_id %in% survey_sample$visit_id,
+        species %in% c(sp_ob, sp_fac)) %>% 
+      left_join(visits) %>% 
+      left_join(points) %>% 
+      group_by(property_id) %>% 
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    obligate = 
+      birds %>% 
+      filter(
+        visit_id %in% survey_sample$visit_id,
+        species %in% c(sp_ob)) %>% 
+      left_join(visits) %>% 
+      left_join(points) %>% 
+      group_by(property_id) %>% 
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    facultative = 
+      birds %>% 
+      filter(
+        visit_id %in% survey_sample$visit_id,
+        species %in% c(sp_fac)) %>% 
+      left_join(visits) %>% 
+      left_join(points) %>% 
+      group_by(property_id) %>% 
+      summarize(sp = length(unique(species))) %>% 
+      left_join(points) %>% 
+      group_by(owner) %>% 
+      summarize(
+        mean_sp = mean(sp), 
+        se = sd(sp)/sqrt(length(sp))),
+    .id = "status")
 
 # Plot
 ggplot(
   data = rich_prop_1yr,
   aes(
-    x = owner,
+    x = factor(
+      status, 
+      levels = c("obligate", "facultative", "all_grass"),
+      labels = c("obligate", "facultative", "obligate +\nfacultative")), 
     y = mean_sp, 
     fill = owner)) +
   geom_col(position = "dodge") +
@@ -302,7 +372,18 @@ ggplot(
   labs(
     x = "", 
     y = "Mean richness by property (SE)", 
-    fill = "Landowner")
+    fill = "Landowner",
+    title = "Grassland species richness",
+    subtitle = "Sampled at 3 points per property in first year surveyed")
+
+# Possibly because they were on larger properties with more diverse habitats
+# (which is an effect that would persist even when standardized for effort)
+points %>% 
+  group_by(owner) %>% 
+  summarize(
+    min = min(area, na.rm = T), 
+    mean = mean(area, na.rm = T), 
+    max = max(area, na.rm = T))
 
 ## Survey richness ----
 
@@ -364,7 +445,9 @@ ggplot(
   labs(
     x = "", 
     y = "Mean species per survey (SE)", 
-    fill = "Landowner")
+    fill = "Landowner",
+    title = "Grassland species richness",
+    subtitle = "Sampled across all surveys")
 
 ## Point-year standard richness ----
 
@@ -435,7 +518,9 @@ ggplot(
   labs(
     x = "", 
     y = "Mean species per point per year (SE)", 
-    fill = "Landowner")
+    fill = "Landowner",
+    title = "Grassland species richness",
+    subtitle = "Sampled per point per year")
 
 
 # Explore covariate data --------------------------------------------------
@@ -464,7 +549,8 @@ landcover %>%
 
 # Format data for vegan ---------------------------------------------------
 
-abund <-
+# Get total abundance (will be converted to relative automatically)
+method_a <-
   left_join(birds, visits) %>% 
   count(visit_id, species) %>% 
   # Get zeroes
@@ -481,13 +567,38 @@ abund <-
     ) %>% 
   pivot_wider(names_from = "species", values_from = "sum")
 
-# Another method: use rarefaction
+# Sample cutdown method: point-year, 3 visits/year
+method_b <-
+  left_join(birds, visits) %>% 
+  filter(visit <= 3) %>% 
+  mutate(ptyr = str_c(point_id, year)) %>% 
+  count(ptyr, species) %>% 
+  # Get zeroes
+  right_join(spxptyr) %>% 
+  replace_na(list(n = 0)) %>% 
+  pivot_wider(names_from = "species", values_from = "n")
+
+#method_c <-
 
 
 # Calculate metrics and visualize -----------------------------------------
 
-abund <- abund_b
+abund <- method_a
 
+method <-
+  case_when(
+    identical(abund, method_a) ~ "Total abundance across all surveys",
+    identical(abund, method_b) ~ "Abundance separated per point per year, max. 3 visits",
+    #identical(abund, method_c) ~ "Undefined",
+    TRUE ~ "Undefined")
+
+landcover_wide <-
+  pivot_wider(
+    landcover,
+    names_from = radius, 
+    values_from = c(cropland:grassland, protected))
+
+# Method A
 data <-
   full_join(
     specnumber(
@@ -497,72 +608,116 @@ data <-
       column_to_rownames(abund, var = "point_id")) %>% 
       enframe(name = "point_id", value = "shannon")) %>% 
   mutate(hill = exp(shannon)) %>% 
-  #left_join(landcover) %>%
-  left_join(points)
+  left_join(landcover_wide)
+
+# Method B
+data <- 
+  full_join(
+    specnumber(
+      column_to_rownames(abund, var = "ptyr"))%>% 
+      enframe(name = "ptyr", value = "richness"),
+    diversity(
+      column_to_rownames(abund, var = "ptyr")) %>% 
+      enframe(name = "ptyr", value = "shannon")) %>% 
+  mutate(hill = exp(shannon)) %>% 
+  left_join(
+    visits %>% 
+      mutate(ptyr = str_c(point_id, year)) %>% 
+      select(ptyr, point_id, year)) %>% 
+  left_join(landcover_wide) %>% 
+  left_join(first_year) %>% 
+  filter(first == year)
   
-hist(data$richness)
-data %>% distinct(point_id, richness, owner) %>% 
+# Histograms of Shannon
+data %>% 
+  distinct(point_id, hill, owner) %>% 
   filter(!is.na(owner)) %>% 
-  ggplot(aes(x = richness, color = owner)) + 
+  ggplot(aes(x = hill, color = owner)) + 
   geom_density(size = 1) + 
   scale_color_brewer(palette = "Paired") +
-  scale_x_continuous(breaks = 0:max(data$richness)) +
-  theme(panel.grid.minor = element_blank())
-hist(data$diversity)
-data %>% distinct(point_id, diversity, owner) %>% 
-  filter(!is.na(owner)) %>% 
-  ggplot(aes(x = diversity, color = owner)) + 
-  geom_density(size = 1) + 
-  scale_color_brewer(palette = "Paired") +
-  scale_x_continuous(breaks = 0:max(data$diversity)) +
-  theme(panel.grid.minor = element_blank())
+  scale_x_continuous(breaks = 0:max(data$hill)) +
+  theme(panel.grid.minor = element_blank()) +
+  labs(
+    x = "Hill number (effective # of species)",
+    title = paste("Method:", method))
 
 data %>% 
-  filter(!is.na(radius)) %>% 
-  # group_by(property_id) %>% 
-  # sample_n(size = 100, replace = T) %>% 
-  pivot_longer(
-    cols = cropland:protected, 
-    values_to = "proportion", 
-    names_to = "metric") %>% 
-  ggplot(
-    aes(
-      x = proportion, 
-      y = diversity, 
-      group = owner, 
-      color = owner)) +
-    geom_point(alpha = 0.15, size = 0.2) +
-    facet_grid(rows = vars(metric), cols = vars(radius)) +
-    scale_color_brewer(palette = "Paired") +
-    geom_smooth(method = "lm", se = FALSE) +
-  theme_bw(base_size = 15) +
-  theme(panel.grid = element_blank())
-
-data %>% 
-  filter(!is.na(owner), radius == 1000) %>% 
-  ggplot(aes(x = owner, y = richness, fill = owner)) +
+ggplot(aes(x = owner, y = hill, fill = owner)) + 
   geom_boxplot() +
   scale_fill_brewer(palette = "Paired") +
-  theme_bw(base_size = 15)
+  labs(title = paste("Method:", method))
 
-# Do owner types have different landcover
+n_distinct(points$point_id)
+n_distinct(points$property_id)
 
-aov(
-  formula = grassland ~ owner, 
-  data = 
-    filter(data, radius == 1000) %>% 
-    group_by(property_id) %>% 
-    sample_n(5, replace = T)) %>% 
-  TukeyHSD()
+# Explore landscape data --------------------------------------------------
 
-# How many points
-points %>% 
-  count(owner) %>% st_drop_geometry() %>% 
-  left_join(
-  # How many visits per point
-  visits %>% 
-    count(point_id) %>% 
-    left_join(points) %>% 
-    group_by(owner) %>% 
-    summarize(visits_per_point = mean(n), se = sd(n)/sqrt(length(n))))
+prot_own <-
+  lm(protected_8000 ~ owner, data = landcover_wide)
+
+broom::tidy(anova(prot_own))
+
+TukeyHSD(aov(prot_own)) %>% broom::tidy()
+
+# Points on public lands had more developed context.
+# For example, within 2 km points on public land were significantly
+# more developed 
+
+# Did all-richness differ
+rich <-
+  birds %>% 
+    left_join(visits) %>% 
+    # Standard effort: 3 visits
+    filter(
+      visit <= 3, 
+      species %in% c(sp_ob)) %>% 
+    group_by(point_id, year) %>%  
+    summarize(sp = length(unique(species))) %>% 
+    left_join(points)
+
+TukeyHSD(aov(lm(sp ~ owner, data = rich)))
+anova(lm(sp ~ owner, data = rich))
+
+AIC(
+  lm(hill ~ 1, data = data),
+  lm(hill ~ owner * developed_250, data = data),
+  lm(hill ~ owner * developed_500, data = data),
+  lm(hill ~ owner * developed_750, data = data),
+  lm(hill ~ owner * developed_1000, data = data),
+  lm(hill ~ owner * developed_1250, data = data),
+  lm(hill ~ owner * developed_1500, data = data),
+  lm(hill ~ owner * developed_1750, data = data),
+  lm(hill ~ owner * developed_2000, data = data),
+  lm(hill ~ owner * developed_2250, data = data),
+  lm(hill ~ owner * developed_2500, data = data),
+  lm(hill ~ owner * developed_2750, data = data),
+  lm(hill ~ owner * developed_3000, data = data),
+  lm(hill ~ owner * developed_3250, data = data),
+  lm(hill ~ owner * developed_3500, data = data),
+  lm(hill ~ owner * developed_3750, data = data),
+  lm(hill ~ owner * developed_4000, data = data),
+  lm(hill ~ owner * developed_4250, data = data),
+  lm(hill ~ owner * developed_4500, data = data),
+  lm(hill ~ owner * developed_4750, data = data),
+  lm(hill ~ owner * developed_5000, data = data),
+  lm(hill ~ owner * developed_5250, data = data),
+  lm(hill ~ owner * developed_5500, data = data),
+  lm(hill ~ owner * developed_5750, data = data),
+  lm(hill ~ owner * developed_6000, data = data),
+  lm(hill ~ owner * developed_6250, data = data),
+  lm(hill ~ owner * developed_6500, data = data),
+  lm(hill ~ owner * developed_6750, data = data),
+  lm(hill ~ owner * developed_7000, data = data),
+  lm(hill ~ owner * developed_7250, data = data),
+  lm(hill ~ owner * developed_7500, data = data),
+  lm(hill ~ owner * developed_7750, data = data),
+  lm(hill ~ owner * developed_8000, data = data)
+) %>% 
+  rownames_to_column("model") %>% 
+  mutate(
+    delta = round(AIC - min(AIC), 2),
+    radius = parse_number(model)) %>% 
+  arrange(AIC) %>% 
+  filter(radius!=1) %>% 
+  ggplot(aes(x = radius, y = -AIC)) + geom_line()
 

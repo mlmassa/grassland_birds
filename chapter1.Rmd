@@ -967,12 +967,12 @@ read_rds('data/processed/static_covs.rds') %>%
     legend.position = 'none',
     axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1))
 
-# ggsave(
-#   "output/plots/ch1/fig_2.jpg",
-#   width = 6.5,
-#   height = 5,
-#   units = "in",
-#   dpi = 300)
+ggsave(
+  "output/plots/ch1/fig_2.png",
+  width = 6.5,
+  height = 5,
+  units = "in",
+  dpi = 300)
 ```
 
 <br>
@@ -1053,12 +1053,12 @@ mean_prop_points %>%
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) +
   theme(legend.position = "top")
 
-# ggsave(
-#   "output/plots/ch1/fig_4.jpg",
-#   width = 4.2,
-#   height = 3,
-#   units = "in",
-#  dpi = 300)
+ggsave(
+  "output/plots/ch1/fig_4.png",
+  width = 4.2,
+  height = 3,
+  units = "in",
+ dpi = 300)
 ```
 
 <br>
@@ -1159,13 +1159,13 @@ ggarrange(
   nrow = 2
 )
 
-# ggsave(
-#   "output/plots/ch1/fig_5.jpg",
-#   width = 6.75,
-#   height = 5,
-#   units = "in",
-#   bg = "white"
-# )
+ggsave(
+  "output/plots/ch1/fig_5.png",
+  width = 6.75,
+  height = 5,
+  units = "in",
+  bg = "white"
+)
 
 ```
 
@@ -1215,15 +1215,15 @@ betas %>%
     legend.position = c(0.99, 0.99),
     legend.title = element_blank(),
     legend.margin = margin(t = 0, r = 5, b = 1),
-    legend.background = element_rect(fill = "white", color = "gray70", linewidth = 1)) +
+    legend.background = element_rect(fill = "white")) +
   labs(caption = "*Covariate run on subset of the data and not included in full models")
 
-# ggsave(
-#   "output/plots/ch1/fig_6.jpg",
-#   width = 6.5,
-#   height = 5,
-#   units = "in",
-#   bg = "white")
+ggsave(
+  "output/plots/ch1/fig_6.png",
+  width = 6.5,
+  height = 5,
+  units = "in",
+  bg = "white")
 
 ```
 
@@ -1337,13 +1337,13 @@ ggarrange(
   ncol = 2
 )
 
-# ggsave(
-#   "output/plots/ch1/fig_7.jpg",
-#   width = 6.75,
-#   height = 5,
-#   units = "in",
-#   bg = "white"
-# )
+ggsave(
+  "output/plots/ch1/fig_7.png",
+  width = 6.75,
+  height = 5,
+  units = "in",
+  bg = "white"
+)
 
 ```
 
