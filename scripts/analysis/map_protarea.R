@@ -86,7 +86,7 @@ ggplot() +
   geom_sf(
     data = pl,
     aes(fill = owner, color = owner),
-    size = 0.25) +
+    size = 0.2) +
   scale_fill_discrete(type = c("#ACCCE4", "#B8DD81", "gray90")) +
   scale_color_discrete(type = c("#ACCCE4", "#B8DD81", "gray90")) +
 # US state borders
@@ -100,8 +100,8 @@ ggplot() +
     data = properties,
     color = "black",
     shape = 1,
-    stroke = 1,
-    size = 3) +
+    stroke = 0.9,
+    size = 2.5) +
   coord_sf(
     xlim = c(bbox$xmin, bbox$xmax),
     ylim = c(bbox$ymin, bbox$ymax)

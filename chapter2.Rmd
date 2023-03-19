@@ -154,15 +154,15 @@ We predicted that
 ## Study area
 
 The study took place within the 16-county VWL study area in the Piedmont and Valley and Ridge regions of Virginia, with two additional sites in central Maryland and one in West Virginia. 
-A total of 
-Properties consisted of
+A total of...
+Properties consisted of...
 Trained observers conducted surveys on `r n_distinct(points$point_id)` points among `r n_distinct(points$property_id)`properties from `r min(visits$year)` to `r max(visits$year)`.
-Points were located on public
+Points...
+Trying to figure out what info to put here versus next section...
 
-Map
 
-```{r map}
-knitr::include_graphics("output/plots/maps/protarea_points.png")
+```{r map, fig.cap = "Map of study region where grassland birds were monitored. Colored areas are protected lands from USGS Protected Areas Database. Black circles are surveyed properties included in this analysis."}
+knitr::include_graphics("output/plots/maps/protarea_properties.png")
 ```
 
 ## Monitoring programs
