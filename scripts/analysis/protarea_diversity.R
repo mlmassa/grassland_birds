@@ -721,3 +721,25 @@ AIC(
   filter(radius!=1) %>% 
   ggplot(aes(x = radius, y = -AIC)) + geom_line()
 
+
+focal_abund <-
+  abund %>% 
+  filter(species %in% sp_grs$species)
+
+library(multcompView)
+
+sp_anovas <-
+  focal_abund %>% 
+    split(focal_abund$species) %>% 
+    purrr::map_dfr(
+      ~ lm(n ~ owner, data = .x) %>% 
+        anova() %>% 
+        broom::tidy(),
+      .id = "species") %>% 
+    filter(term == "owner") %>% 
+    mutate(signif = case_when(
+      p.value < 0.001 ~ "P<0.001",
+      p.value < 0.05 ~ "P<0.05",
+      TRUE ~ "n.s.")) 
+
+
