@@ -2,10 +2,9 @@
 date: |
   `r format(Sys.time(), '%d %b %Y')`
 title: | 
-  Chapter 2 draft: Can public lands safeguard grassland bird populations in the eastern US?
+  Can public lands safeguard grassland bird populations in the eastern US?
 author: 
   - Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA
-  # - Thomas L. Serfass, Frostburg State University, 101 Braddock Road, Frostburg, MD 21532, USA
   - Amy E. M. Johnson, Smithsonian Conservation Biology Institute, 1500 Remount Road, Front Royal, VA 22630, USA
   - Elizabeth R. Matthews, National Park Service, 1100 Ohio Drive SW, Washington, DC 20242, USA
   - W. Gregory Shriver, University of Delaware, 210 S College Avenue, Newark, DE 19716, USA
@@ -31,27 +30,25 @@ link-citations: yes
 knitr::opts_chunk$set(message = F, warning = F, echo = F)
 
 # Load required packages
-library(knitr)
-library(kableExtra)
-library(flextable)
-library(tidyverse)
-library(ggtext)
-library(glue)
-library(sf)
-library(ggpubr)
-library(vegan)
-
-# Don't show NAs in kables
-options(knitr.kable.NA = '')
+library(knitr) # To make it knit to Word
+library(flextable) # For Word-compatible tables
+library(tidyverse) # For data manipulation
+library(ggtext) # To format text on graphs
+library(glue) # To easily combine text
+library(sf) # Not needed but the points are spatial
+library(ggpubr) # To combine figures, if needed
+library(vegan) # For diversity analysis
+library(multcompView) # For graph letter contrasts ANOVA
+source("scripts/wrangling/sample_maxn_method.r") # Fixes sampling method
 
 # If simple template, Flextable defaults to Calibri 11. Otherwise, TNR 12
 if (rmarkdown::metadata$output$`bookdown::word_document2`$reference_docx == "template_simple.docx")
   set_flextable_defaults(font.family = 'Calibri', font.size = 11) else
     set_flextable_defaults(font.family = 'Times New Roman', font.size = 12) 
 
-# Set plot theme
+# Set default plot theme
 theme_set(
-  theme_bw() +
+  theme_bw(base_size = 10) +
   theme(
     strip.text = element_text(size = 11),
     axis.text = element_text(size = 9),
@@ -61,34 +58,50 @@ theme_set(
     strip.background = element_blank()))
 
 # Import data
-# Read in data: points, visits, birds, species
+# Read in data: points, visits, birds, species taxonomy
 read_rds("data/processed/ch2_combined_birds.rds") %>% 
   list2env(.GlobalEnv)
 
+# Unspatial the points
 points <- st_drop_geometry(points)
 
-# Read in covariates
-landcover <- read_rds("data/processed/ch2_pointcovs.rds")
+# Oops, add property acreage
+points <-
+  points %>% 
+  left_join(
+    readxl::read_xlsx("data/raw/VWL_Property_Database.xlsx", sheet = 3) %>% 
+      select(property_id = Property_ID, acreage = Acreage) %>% 
+      mutate(
+        property_id = as.character(property_id), 
+        acreage = as.numeric(acreage)) %>% 
+    bind_rows(
+      tibble(
+        property_id = c("ANTI", "MANA", "MONO", "HAFE"), 
+        acreage = c(3249.92, 4522.24, 1500.16, 2385.28))),
+    by = "property_id") %>% 
+  # Log is more normaler
+  mutate(log_acres = log(acreage))
 
-# Remove all incidentals
+# Read in land cover covariates
+landcover <- 
+  read_rds("data/processed/ch2_pointcovs.rds") %>% 
+  st_drop_geometry() %>% 
+  select(-geometry) %>% 
+  left_join(points)
+
+# Remove all incidentals (sorry owls and WTKI)
 birds <- 
-  filter(birds, incidental == 0) %>% select(-incidental)
+  filter(birds, incidental == 0) %>% 
+  select(-incidental)
 
-# Set theme for plotting
-theme_set(
-  theme_bw(base_size = 10) +
-  theme(
-    panel.grid = element_blank(),
-    strip.background = element_blank()))
-
-# Set palette for fac/ob
-pal <- c(facultative = "gray", obligate = "black")
+# Perform the analysis!
 
 # RICHNESS ----
 
-# Calculating abundance first to use it for 0-detection sp
+# Get all species x visit combinations
 spxvisit <- expand(birds, visit_id, species)
 
+# Start by calculating abundance so 0-filled data can be used
 abund <-
   birds %>% 
   left_join(visits) %>% 
@@ -99,8 +112,11 @@ abund <-
   left_join(sp_grs) %>% 
   left_join(visits) %>% 
   left_join(points) %>% 
-  select(visit_id, species, common_name, n, point_id, year, visit, owner, status)
+  select(
+    visit_id, species, common_name, n, 
+    point_id, year, visit, owner, status)
 
+# Calculate mean abundance by survey for all species
 abund_by_surv <-
   abund %>% 
   filter(species %in% c(sp_fac, sp_ob)) %>% 
@@ -112,8 +128,9 @@ abund_by_surv <-
   filter(!is.na(common_name)) %>% 
   left_join(sp_grs)
 
-
 # Richness per point-year (standard effort)
+
+# Get points to eliminate (1-2 visits that year)
 toofewvisits <- 
   visits %>% 
   count(point_id, year) %>% 
@@ -121,17 +138,26 @@ toofewvisits <-
   mutate(ptyr = str_c(point_id, year)) %>% 
   pull(ptyr)
 
+# Calculate richness per point-year
 rich_ptyr <-
   abund %>% 
   mutate(ptyr = str_c(point_id, year)) %>% 
+  # No points with <3 visits; only visits 1-3 of others
+  # Should I randomly select the visits? Stratify by time?
+  # Some VWL points had multiple visits per day... Biasing abund/rich
+  # To that time of season... hmmm
   filter(!ptyr %in% toofewvisits, visit <= 3) %>% 
   group_by(ptyr, point_id, year, species, status, owner) %>% 
+  # Abundance = sum of individuals
+  # Detection = 1|0
   summarize(
     abund = sum(n),
     detection = if_else(abund > 0, 1, 0)) %>% 
+  # Abundance by bird type x owner
   group_by(owner, status, ptyr) %>% 
   summarize(sp = sum(detection))
 
+# Get combined sp. richness too
 rich_ptyr <-
   bind_rows(
     rich_ptyr,
@@ -142,6 +168,8 @@ rich_ptyr <-
       mutate(status = "combined")) %>% 
   distinct()
 
+# Get mean richness summary 
+# This is across all ptyrs (more for public)
 rich_ptyr_summary <- 
   rich_ptyr %>% 
   group_by(status, owner) %>% 
@@ -149,11 +177,14 @@ rich_ptyr_summary <-
     mean_sp = mean(sp), 
     se = sd(sp)/sqrt(length(sp)))
 
+# ANOVA: ompare richness by owner
 # anova(lm(sp ~ owner, data = rich_ptyr %>% filter(status == "obligate")))
 # anova(lm(sp ~ owner, data = rich_ptyr %>% filter(status == "facultative")))
 # anova(lm(sp ~ owner, data = rich_ptyr %>% filter(status == "combined")))
 
 # ABUNDANCE ----
+
+#
 focal_abund <-
   abund %>% 
   filter(species %in% sp_grs$species) %>% 
@@ -181,8 +212,6 @@ focal_abund <-
           species == "grassland" ~ "All grassland", 
           TRUE ~ species))
   )
-
-library(multcompView)
 
 sp_anovas <-
   focal_abund %>% 
@@ -238,7 +267,8 @@ plot_abund_data <-
 # DIVERSITY ----
 
 # Get total abundance (will be converted to relative automatically)
-abund_vegan <-
+# Method A: all samples pooled
+abund_vegan_a <-
   left_join(birds, visits) %>% 
   count(visit_id, species) %>% 
   # Get zeroes
@@ -255,13 +285,37 @@ abund_vegan <-
     ) %>% 
   pivot_wider(names_from = "species", values_from = "sum")
 
+# Method B: by pointyear
+abund_vegan_b <-
+  left_join(birds, visits) %>% 
+  count(visit_id, species) %>% 
+  # Get zeroes
+  right_join(spxvisit) %>% 
+  replace_na(list(n = 0)) %>% 
+  left_join(visits) %>% 
+  filter(species %in% sp_grs$species) %>% 
+  group_by(point_id, year, species) %>% 
+  summarize(
+    #max = max(n),
+    sum = sum(n),
+    # mean = mean(n)
+    #visits = length(n)
+    ) %>% 
+  pivot_wider(names_from = "species", values_from = "sum") %>% 
+  mutate(point_id = str_c(point_id, year)) %>% 
+  select(-year)
+
+# Widen landcover
 landcover_wide <-
   pivot_wider(
     landcover,
     names_from = radius, 
     values_from = c(cropland:grassland, protected))
 
-# Method A
+# Pick method
+abund_vegan <- abund_vegan_b
+
+# Do specnumber and diversity
 data <-
   full_join(
     specnumber(
@@ -271,9 +325,16 @@ data <-
       column_to_rownames(abund_vegan, var = "point_id")) %>% 
       enframe(name = "point_id", value = "shannon")) %>% 
   mutate(hill = exp(shannon)) %>% 
+  mutate(point_id = str_sub(point_id, end = -5)) %>% 
   left_join(landcover_wide)
 
-# aov(shannon ~ owner, data = data)
+# Randomly thin data: max # to use per property
+data <-
+  data %>% 
+  group_by(property_id) %>% 
+  slice_sample(n = 50, replace = F) %>% 
+  arrange(point_id)
+
 ```
 
 *Correspondence*: Megan Massa, University of Maryland Center for Environmental Science, 301 Braddock Road, Frostburg, MD 21532, USA. Email: megan.massa@umces.edu
@@ -289,10 +350,10 @@ data <-
 In eastern North America, populations of grassland birds are under severe threat from habitat loss and agricultural intensification. 
 Protected areas such as private lands and conservation easements are important tools to protect biodiversity, but their relative effectiveness for grassland birds in this region is less well known. 
 To assess whether public lands safeguard grassland bird diversity, we combined data from two grassland bird monitoring programs: the National Park Service National Capital Region Inventory & Monitoring Network and the Smithsonian Conservation Biology Institute's Virginia Working Landscapes program.
-From point count surveys in Virginia, Maryland, and West Virginia, we compared richness, abundance, and diversity of 27 obligate and facultative grassland species among public protected areas, private conservation easements, and unprotected private lands.
+From point count surveys in Virginia, Maryland, and West Virginia, we compared richness, abundance, and diversity of 22 obligate and facultative grassland bird species among public protected areas, private conservation easements, and unprotected private lands.
 We found that richness did not differ among land ownership types, but diversity was highest on public lands.
 However, public lands had a lower abundance than private lands of grassland birds as a whole.
-Grassland points surveyed on public lands were also surrounded by more development and more isolated from surrounding protected cover than points on private lands.
+Grassland points surveyed on public lands were also surrounded by more development and more isolated from surrounding protected land types than points on private lands.
 We did not find any community metric to be higher on unprotected private lands than on privately-owned easements.
 These results suggest that although grassland bird populations are diverse on public lands, partnerships between public and private lands will be key to conserving grassland birds.
 
@@ -304,45 +365,53 @@ These results suggest that although grassland bird populations are diverse on pu
 <!-- Biodiversity decline -->
 Biodiversity loss is a pressing global issue driven by human modification of ecosystems, including habitat loss and degradation.
 The expansion and intensification of agriculture are major contributors to biodiversity loss worldwide [@maxwell2016].
-In North America, population declines of birds that rely on grassland habitats have been driven by these factors [@stanton2018; @hill2014], with a 53% decrease in populations since 1970 [@rosenberg2019].
-These declines have made this guild a high priority for conservation efforts [@brennan2005].
+In North America, these factors have contributed to precipitous declines of birds that rely on grassland habitats [@stanton2018; @hill2014], with a 53% decrease in populations since 1970 [@rosenberg2019].
 The collapse of grassland bird populations has been particularly dramatic in the eastern US [@sauer2017], largely due to the loss of pasture and remaining historical grasslands to afforestation, development, and intensive agriculture [@brennan2005].
+These declines have made this guild a high priority for conservation efforts [@brennan2005], with grassland bird species commonly threatened or endangered in the east [@vickery1991].
 
 <!-- Protected areas -->
 Protected areas are a vital strategy for maintaining biodiversity in the face of population declines.
-These areas can be insulated from, though not immune to, surrounding sensory pollution [@buxton2017] and land-use changes [@andam2008].
-Such insulation from the pressures of the surrounding human-dominated landscape can create a safeguarding effect where bird species show better long-term population growth rates inside protected areas than outside [@dettling2021].
-However, publicly-owned lands are limited in extent and coverage of habitat types, often under-representing grassland species [@alexander2017; @grand2019].
+One common goal in the establishment of protected areas is to protect and enhance habitats from degradation [@watson2014].
+For example, protected areas can be insulated from, though not immune to, surrounding land-use changes [@andam2008] and resulting sensory pollution [@buxton2017].
+Such insulation from the pressures of a human-dominated landscape can create a safeguarding effect where bird species show better long-term population growth rates inside protected areas than outside [@dettling2021].
 The impact of protected areas on eastern grassland birds is under-studied; most indicators for the health of public lands in this region such as the Bird Community Index have focused on forest and edge species [@ladin2016; @oconnell1998; @canterbury2000; @goodwin2014].
+
+Although important, protected areas alone are not sufficient to conserve biodiversity.
+At a global scale, protected areas have fallen short of target goals set by the Convention on Biological Diversity [@watson2014].
+Publicly-owned protected areas are limited in extent and coverage of habitat types, often under-representing grassland species [@alexander2017; @grand2019].
 Public lands are also faced by management challenges that can limit their effectiveness as protected areas.
 For example, financial support for public lands has stagnated in the US in recent decades, leading to large management backlogs [@watson2014].
-These backlogs can be particularly important in managing ephemeral grasslands that can require annual to biannual disturbance to remain suitable habitat for species of concern.
-At a global scale, protected areas have fallen short of target goals set by the Convention on Biological Diversity [@watson2014].
-Although important, protected areas alone are not sufficient to conserve biodiversity.
+These backlogs can be particularly important in managing ephemeral grasslands that can require annual to biannual disturbance via prescribed fire, mowing, or grazing to remain suitable habitat for species of concern.
 
 <!-- Private areas, esp for grasslands -->
-Privately-owned lands are also essential for conservation, and integrating public and private lands is necessary to conserve grassland birds.
-The majority of land in the US is privately owned, and roughly 52% of land in the US is used for agricultural production [@usdaers].
-Many grassland species are considered area-sensitive, so increasing the total area of protected grassland will be necessary to conserve them.
-However, area alone is not sufficient to protect grassland bird populations in agricultural landscapes when land management degrades habitat [@with2008], and even small patches can be beneficial to grassland bird populations when managed with bird conservation in mind [@weidman2011].
-A patchwork of agricultural and working lands provide human needs through agriculture and can function complementary to protected areas in the maintenance of biodiversity [@kremen2018].
+Privately-owned lands are essential for conservation.
+The majority of land area in the US is privately owned and roughly 52% of all land area in the US is used for agricultural production [@usdaers], so integrated conservation planning for grassland birds will necessarily rely on private lands as well as public ones.
+Many grassland species are considered area-sensitive [@ribic2009], so increasing the total area of protected grassland will be necessary to conserve them.
+However, area alone is not sufficient to protect grassland bird populations in agricultural landscapes when land management degrades habitat through overgrazing or conversion to row crops [@with2008].
+Additionally, even small patches can be beneficial to grassland bird populations when managed with bird conservation in mind [@weidman2011].
+Integrating agricultural ecosystems and conservation goals will require working lands that provide for human needs while still complementing protected areas in the maintenance of biodiversity [@kremen2018].
 Agricultural practices meant to preserve wildlife and spare land from production can result in both high crop yield and grassland ecosystem functioning [@green2005].
-Working lands can have same community composition as protected areas, though this effect has been shown most strongly in agroforestry [@karp2019].
-Individual management decisions on unprotected working lands, often motivated by the need for yield and annual fluctuations in climate, have the power to drive grassland bird populations at a regional scale [@allen2021].
-However, management practices that favor grassland birds are often more expensive, leading to lack of widespread adoption [@atwood2017; @troy2005].
+Privately-owned working lands can have same community composition as protected areas, though this effect has been shown most strongly in agroforestry [@karp2019].
+Individual management decisions on unprotected working lands, often motivated by the need for yield and annual fluctuations in climate, have the power to impact bird populations positively and negatively at a regional scale [@allen2021].
+However, management practices that favor grassland birds are often more expensive, leading to lack of widespread adoption by private landowners [@atwood2017; @troy2005].
 
 Land easements are one strategy to promote wildlife-friendly land use on private lands.
 These can take the form of land-sparing agreements and cost-sharing programs that encourage the adoption of certain management practices.
-Conservation easements can provide equal or superior ecosystem services as protected public lands [@villamagna2015] and protect grassland habitat from conversion to degrading land use [@claassen2017].
+These programs can involve setting aside land from production or delaying hay harvests, which allows more grassland birds to fledge but reduces hay yield [@gruntorad2021; @bollinger1990], in exchange for payments.
+Conservation easements can provide equal or superior ecosystem services as protected public lands [@villamagna2015] and protect grassland habitat from conversion to degrading land use such as intensive agriculture or development [@claassen2017].
 One form of easement is the US Department of Agriculture's Conservation Reserve Program (CRP), which removes cropland from production through limited-term voluntary conservation easements on private lands.
 A large body of research suggests that these easements can host high populations of regionally declining grassland species [@johnson1993; @johnson1993a; @ribic2009a; @herkert2009].
-CRP easements on private lands can even outperform protected public lands and unprotected private lands for grassland birds [@cunningham2005; @best1997; @ahlering2019].
+CRP easements on private lands can even outperform protected public lands and unprotected private lands for grassland birds in abundance [@best1997; @cunningham2005; @ahlering2019] and diversity [@cunningham2005].
 
 <!-- Local to regional indicators for grassland health -->
-Public lands, alongside conservation measures such as CRP enrollment, cost-share practices, and prairie restoration, can have impacts from the local [@allen2019] to regional [@allen2021] to landscape scale [@pavlackyjr.2022; @veech2006].
-There are many potential scales over which land use and land protection could impact grassland bird communities, so determining the scale of effect, that is, the scale at which communities respond most strongly to the metric, is crucial [@miguet2016].
-We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of protected areas and private land at local and regional scales for grassland bird conservation.
-These areas were monitored as part of two separate projects conducted by the National Park Service Inventory and Monitoring Program (NPS I&M) and the Smithsonian Conservation Biology Institute's Virginia Working Landscapes (VWL), a voluntary conservation program (www.vaworkinglandscapes.org). 
+Conservation measures such as CRP enrollment, cost-share practices, and grassland restoration can impact grassland bird populations from the local [@allen2019] to regional [@allen2021] to landscape scale [@pavlackyjr.2022; @veech2006].
+However, landscape context can mitigate the conservation value of protected areas [@rayner2013].
+There are many potential scales over which land use and land protection could impact grassland bird communities, so determining the scale of effect, i.e. the spatial scale at which communities respond most strongly to protections, is crucial [@miguet2016].
+
+We surveyed bird communities in Virginia, Maryland, and West Virginia to evaluate the relative contributions of public protected areas, conservation easements, and private land at local and regional scales for grassland bird conservation.
+These areas were monitored as part of two separate projects. One was conducted by the National Park Service Inventory and Monitoring Program (NPS I&M), which
+monitors natural resources within parks to inform manager decision-making [@nationalparkservice2005].
+The other was the Smithsonian Conservation Biology Institute's Virginia Working Landscapes (VWL), a voluntary conservation and research program that promotes the conservation of native biodiversity and sustainable land use (www.vaworkinglandscapes.org). 
 We hypothesized that protected areas can safeguard grassland bird diversity in this region. 
 We predicted that 
 (1) private easements and public lands would have higher grassland species richness, abundance, and diversity relative to unprotected private lands, 
@@ -356,11 +425,10 @@ We predicted that
 ## Study area
 
 The study took place within the 16-county VWL study area in the Piedmont and Valley and Ridge regions of Virginia, with two additional sites in central Maryland and one in West Virginia. 
-A total of...
-Properties consisted of...
-Trained observers conducted surveys on `r n_distinct(points$point_id)` points among `r n_distinct(points$property_id)`properties from `r min(visits$year)` to `r max(visits$year)`.
-Points...
-Trying to figure out what info to put here versus next section...
+These states are in the mid-atlantic US.
+This area harbors grassland diversity.
+Although the east coast was historically forested, grassland birds have always existed in the landscape through disturbances produced by wildfire, beaver activity, poor soils, and Native American land management [@askins1999].
+Modern habitats for grassland birds in this region include working lands such as pasture and hayfields, military lands, natural and managed meadows, and abandoned farm fields, among others.
 
 
 ```{r map, fig.cap = "Map of study region where grassland birds were monitored. Colored areas are protected lands from USGS Protected Areas Database. Black circles are surveyed properties included in this analysis."}
@@ -370,38 +438,39 @@ knitr::include_graphics("output/plots/maps/protarea_properties.png")
 ## Monitoring programs
 
 We pooled data from two breeding-season bird monitoring programs: one conducted entirely on public lands within NPS and one conducted on a mix of public and private lands throughout the region by VWL.
-The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and in 2014 initiated long-term population monitoring for grassland birds.
-In total, the combined dataset consisted of 760 points on 143 properties.
+The NPS I&M has collected forest bird occurrence and abundance data in the National Capital Region since 2007 [@nationalparkservice2005] and initiated complementary long-term population monitoring for grassland birds in 2014.
+Trained observers conducted surveys on `r n_distinct(points$point_id)` points among `r n_distinct(points$property_id)`properties from `r min(visits$year)` to `r max(visits$year)`.
 NPS I&M surveys occurred between 2014-2019 and in 2021 at 242 points on four national battlefield parks in northern Virginia, central Maryland, and eastern West Virginia.
 VWL conducted surveys at 518 points on 140 properties from 2012-2022.
 Both programs conducted surveys at Manassas National Battlefield Park in Manassas, Virginia.
-NPS points were surveyed annually (range: 3-7 years) while VWL points were typically only visited in one year (range: 1-3 years).
-NPS-surveyed properties were more densely-surveyed (range: 29-100 points per property), while VWL-surveyed properties were less so (range: 1-21 points per property).
+NPS points were surveyed annually, ranging from 3-7 years consecutive years of surveys, while VWL points were typically surveyed in a single year, through some were visited during as many as three years.
+NPS-surveyed properties were larger (mean area: 1,065 ha) and more heavily surveyed (range: 29-100 points per property), while VWL-surveyed properties were smaller on average (mean area: 271 ha) with fewer total surveys (range: 1-21 points per property).
 Each property consisted of at least 3 points located at least 200 m apart.
 
-Survey methods were sufficiently similar between these two programs.
+Survey methodologies were consistent between the two programs, which allowed us to combine them.
 Point counts consisted of a 10 minute count conducted by a single observer (though VWL surveys also typically had a non-observer scribe present) from 30 minutes before sunrise until 5 hours after sunrise.
-Observers performed a fixed-radius count, recording all individual birds within 100 m at their time and distance band of first detection.
+Observers performed a fixed-radius count, recording all individual birds within 100 m at the time and distance of first detection.
 Birds observed outside of this time and distance window were designated as incidentals and were excluded from analysis.
-The two programs differed in their coding of weather conditions and subdivisions of time and distance bands, which were not relevant for this analysis.
+The two programs differed in their coding of weather conditions and subdivisions of time and distance, which were not relevant for this analysis.
 
 ## Analysis
 
 We used the USGS Protected Areas Database of the United States version 3.0 [@pad] to assign each survey point a classification as public land (overlapping a protected area owned by federal, state, or local government, or an NGO), private easement (overlapping a protected area owned privately), or private unprotected (no overlap with protected areas). 
 To examine the impact of land cover and protected area cover at multiple spatial scales, we extracted the proportion of protected area coverage alongside the proportion of different land cover types [@nlcd2019] at buffer radii ranging from 200 m to 8 km.
-We reclassified land cover into two types: forest (consisting of deciduous, evergreen, mixed forest, and woody wetlands) and developed (consisting of low,  medium, and high-intensity urban cover). 
-These two types of land cover are known to have impacts on grassland species [@irvin2013; @buxton2016].
+We reclassified land cover into the following categories: forest (consisting of deciduous, evergreen, mixed forest, and woody wetlands), grassland (shrub/scrub, grassland/herbaceous, and pasture/hay), and developed (consisting of low,  medium, and high-intensity urban cover). 
+These types of land cover are known to have impacts on grassland species [@irvin2013; @buxton2016].
 <!-- We also calculated the contiguous area of the protected area in which each public or private easement point was located. -->
 
 We classified species as obligate and facultative grassland-breeders following @vickery1999 (Table \@ref(tab:species)). 
 We calculated average abundance per survey of facultative and obligate grassland species. 
 We calculated mean annual grassland species richness by point. 
-To prevent differences in sampling intensity form influencing richness, we used only 3 visits per point and did not pool data across years because points in the NPS data set would have inevitably had a higher richness due to singleton rarities accumulated over multiple years of surveys at each point.
-We calculated the Shannon index $H = -\sum_{i = 1}^{S}p_i_ \ln p_i_)$, where *S* is the species richness and *p~i~* is the relative frequency of species *i* (commonly referred to as diversity, but see @jost2006) of grassland species in each ownership type using the R package "vegan" [@oksanen2022]. 
+To prevent differences in sampling intensity form influencing richness and diversity, we used only 3 visits per point (selecting randomly from all visits that year) and did not pool data across years because points in the NPS data set would have inevitably had a higher richness due to singleton rarities accumulated over multiple years of surveys at each point.
+We also randomly thinned to a maximum of 50 points per site within each property to prevent certain well-sampled NPS properties from skewing the mean among other public lands (the next-highest of which had 21 points).
+We calculated the Shannon index $H = -\sum_{i = 1}^{S}p_i_ ln p_i_$, where *S* is the species richness and *p~i~* is the relative frequency of species *i* (commonly referred to as diversity, but see @jost2006) of grassland species in each ownership type using the R package "vegan" [@oksanen2022]. 
 We took the exponential of the Shannon index to get a true measure of diversity, Hill number, which is the effective number of species [@jost2006].
 The advantage of Hill numbers is that they can be effectively compared and obey an intuitive doubling property that accurately reflects proportional differences in assemblies [@chao2014].
 We compared abundance, richness, and diversity among ownership types using one-way analysis of variance (ANOVA). 
-With significant ANOVA results (*P*<0.05), we performed Tukey post-hoc pairwise  comparisons.
+With significant ANOVA results (*P*<0.05), we performed Tukey post-hoc pairwise comparisons.
 
 We modeled diversity and total grassland species abundance as a function of proportion surrounding land cover and ownership.
 We ranked models using Akaike's information criteria AIC [@akaike1974], comparing to a static null model and one with only land ownership.
@@ -467,14 +536,28 @@ landcover %>%
     legend.position = "none",
     panel.grid = element_blank())
 
+ggsave(
+  "output/plots/ch2/protradius.png",
+  width = 6.5,
+  height = 3,
+  units = "in",
+  dpi = 300
+  )
+
 ```
 
 ## Richness, abundance, diversity
 
-While public lands had a slightly higher pooled grassland species richness (21 spp.) than private easements (19 spp.) or private unprotected land (17 spp.), annual richness per point per year (standardized for effort at 3 surveys per point per year) of all grassland species did not differ significantly by landowner type according to a one-way ANOVA (*F~(2,1837)~*=0.06, *P*=0.93; Figure \@ref(fig:richptyr)).
+While public lands had a slightly higher pooled grassland species richness (21 spp.) than private easements (19 spp.) or private unprotected land (17 spp.), annual richness per point per year (standardized for effort at 3 surveys per point per year) of all grassland species did not differ significantly by landowner type according to a one-way ANOVA (*F~(2,1837)~*=0.07, *P*=0.93; Figure \@ref(fig:richptyr)).
 Richness also did not differ for obligate (*P*=0.91) or facultative (*P*=0.70) species when considered alone.
+Variance
 
 ```{r richptyr, fig.width = 5, fig.height = 4, dpi = 300, fig.cap = "Mean annual richness of grassland species at each point by land ownership type. Error bars indicate SE."}
+
+# lm(sp ~ owner, data = filter(rich_ptyr, status == "facultative")) %>% anova()
+# lm(sp ~ owner, data = filter(rich_ptyr, status == "obligate")) %>% anova()
+# lm(sp ~ owner, data = filter(rich_ptyr, status == "combined")) %>% anova()
+
 # Plot 
 ggplot(
   data = filter(rich_ptyr, !is.na(status)),
@@ -484,16 +567,42 @@ ggplot(
       levels = c("obligate", "facultative", "combined"),
       labels = c("obligate", "facultative", "obligate +\nfacultative")), 
     y = sp, 
-    fill = owner)) +
-  geom_boxplot(outlier.size = 0.5) +
-  scale_fill_brewer(palette = "Paired") +
+    color = owner)) +
+  # geom_jitter(
+  #   aes(group = owner), 
+  #   alpha = 0.1,
+  #   position = position_jitterdodge(
+  #     jitter.height = 0.4, 
+  #     jitter.width = 0.2)) +
+  geom_violin(
+    aes(fill = owner),
+    position = position_dodge(),
+    bw = 0.5
+  ) +
+  geom_errorbar(
+    data = filter(rich_ptyr_summary, !is.na(status)),
+    aes(x = factor(
+      status, 
+      levels = c("obligate", "facultative", "combined"),
+      labels = c("obligate", "facultative", "obligate +\nfacultative")), 
+    y = mean_sp,
+    width = 0.5,
+    ymin = mean_sp - se,
+    ymax = mean_sp + se,
+    group = owner),
+    color = "black",
+    position = position_dodge(width = 0.9)) +
+  scale_color_brewer(palette = "Paired") +
+    scale_fill_brewer(palette = "Paired") +
   scale_y_continuous(
     breaks = seq(0, max(rich_ptyr$sp), 1),
     expand = expansion(mult = c(0, 0.1))) +
   labs(
     x = "",
-    y = "Mean annual richness per point",
-    fill = "Landowner") +
+    y = "Annual richness per point",
+    fill = "Landowner",
+    color = "Landowner") +
+  #guides(color = guide_legend(override.aes = list(alpha = 1))) +
   theme(
     legend.position = c(0.025, 0.975),
     legend.background = element_blank(),
@@ -501,17 +610,25 @@ ggplot(
     panel.grid = element_blank()
     )
 
+ggsave(
+  "output/plots/ch2/mean_richness.png",
+  width = 5,
+  height = 4,
+  units = "in",
+  dpi = 300
+  )
+
 ```
 
-Mean abundance varied by species and land ownership, with the most abundant obligates being Grasshopper Sparrow (`r plot_abund_data %>% filter(species == "GRSP") %>% pull(mean_birds_surv) %>% max() %>% round(2)` individuals per survey) and Eastern Meadowlark (`r plot_abund_data %>% filter(species == "EAME") %>% pull(mean_birds_surv) %>% max() %>% round(2)` individuals per survey).
+Mean abundance varied by species and land ownership, with the most abundant obligates being Grasshopper Sparrow *Ammodramus savannarum* (`r plot_abund_data %>% filter(species == "GRSP") %>% pull(mean_birds_surv) %>% max() %>% round(2)` individuals per survey) and Eastern Meadowlark *Sturnella magna* (`r plot_abund_data %>% filter(species == "EAME") %>% pull(mean_birds_surv) %>% max() %>% round(2)` individuals per survey).
 Together, these two species made up 33% of all individual grassland birds that were detected.
-Certain species (Loggerhead Shrike, Northern Harrier, Mallard, Dickcissel) were so rare that fewer than 20 individuals were observed across more than 6,000 surveys.
+Certain species (Loggerhead Shrike *Lanius ludovicianus*, Northern Harrier *Circus hudsonius*, Mallard *Anas platyrhynchos*, Dickcissel *Spiza americana*) were so rare that fewer than 20 individuals were observed across more than 6,000 surveys.
 Land ownership had a significant impact on abundance in 15 of 22 grassland species (Figure \@ref(fig:abundbysurvey)).
 Abundance on public lands was significantly lower than on private lands for 9 of 22 species, as well as for grassland birds as a whole (*P*<0.05).
-Among obligates, Grasshopper Sparrow, Horned Lark, and Vesper Sparrow were more abundant on public lands.
-Easements had higher abundance than private unprotected lands for Common Yellowthroat, American Kestrel, and Savannah Sparrow.
+Among obligates, Grasshopper Sparrow, Horned Lark *Eremophila alpestris*, and Vesper Sparrow *Pooecetes gramineus* were more abundant on public lands.
+Easements had higher abundance than private unprotected lands for Common Yellowthroat *Geothylpis trichas* and American Kestrel *Falco sparverius* (facultative), and Savannah Sparrow *Passerculus sandwichensis* (obligate).
 
-```{r abundbysurvey, fig.width = 6.5, fig.height = 6.5, dpi = 300, fig.cap = "Mean abundance by land ownership type of all grassland species. Bolded, starred species are obligate grassland breeders. Error bars indicate mean + SE. And no, I can't get the god damned letters to line up right."}
+```{r abundbysurvey, fig.width = 6.5, fig.height = 6.5, dpi = 300, fig.cap = "Mean abundance by land ownership type of all grassland species. Species are sorted from most to least abundant. Bolded, starred species are obligate grassland breeders. Error bars indicate mean + SE. Letters indicate significant differences between groups according to Tukey post-hoc pairwise comparisons."}
 ggplot(
   data = plot_abund_data,
   aes(
@@ -523,8 +640,12 @@ ggplot(
       ymin = mean_birds_surv - se, 
       ymax = mean_birds_surv + se),
     width = 0.5,
+    size = 0.5,
     position = position_dodge(0.9)) +
-  geom_col(position = "dodge", color = "black") +
+  geom_col(
+    position = "dodge", 
+    #color = "black", 
+    size = 0.5) +
   geom_text(
     aes(
       label = letter,
@@ -557,43 +678,108 @@ ggplot(
     # legend.justification = c(0, 0),
     # legend.key.size = unit(10, "pt"),
     panel.grid = element_blank()) 
+
+ggsave(
+  "output/plots/ch2/species_abundances.png",
+  width = 6.5,
+  height = 6.5,
+  units = "in",
+  dpi = 300
+  )
 ```
 
-Diversity as both Shannon index and Hill number differed by land ownership type (Hill number: *F~(2,755)~* = 65.0, *P*<0.001). The effective number of grassland species on public lands 4.31 species, which was 1.25 species higher than on private unprotected lands (*P*<0.001) and 1.11 species higher than on private unprotected lands (*P*<0.001).
+Diversity as both Shannon index and Hill number differed by land ownership type (Shannon index: *F~(2,877)~* = 12.8, *P*<0.001).
+Private easements and private unprotected land did not similar, both with a mean of 1.05 effective species (*P*=0.99).
+Shannon index and effective number of species were both lower on public lands (*P*<0.001); however, the magnitude of this difference was small, a difference of only 0.01 effective species on average. 
 
-```{r diversity, fig.width = 6.25, fig.height = 3.5, dpi = 300, fig.cap = "Shannon index H among land ownership types."}
+```{r diversity, fig.width = 6.25, fig.height = 3.5, dpi = 300, fig.cap = "Diversity among land ownership types expressed as Shannon index H as well as its exponential, the Hill number or effective number of species."}
+
+# anova(lm(shannon ~ owner, data = data))
+# TukeyHSD(aov(hill ~ owner, data = data))
+
+data_summary <-
+  data %>% 
+  group_by(owner) %>% 
+  summarize(
+    shannon_se = sd(shannon)/sqrt(length(shannon)), 
+    hill_se = sd(hill)/sqrt(length(hill)), 
+    richness_se = sd(richness)/sqrt(length(richness)), 
+    shannon_mean = mean(shannon), 
+    hill_mean = mean(hill), 
+    richness_mean = mean(richness))
+
 # Plot
 ggarrange(
   data %>% 
   ggplot(aes(x = owner, y = shannon, fill = owner)) + 
-    geom_boxplot() +
+    geom_boxplot(outlier.size = 0.5) +
+    # geom_violin(
+    #   aes(fill = owner),
+    #   position = position_dodge()) +
+    # geom_errorbar(
+    #   data = data_summary,
+    #   aes(
+    #     x = owner, 
+    #     y = shannon_mean,
+    #     ymin = shannon_mean - shannon_se,
+    #     ymax = shannon_mean + shannon_se,
+    #     group = owner),
+    #   width = 0.5,
+    #   color = "black",
+    #   position = position_dodge(width = 0.9)) +
+    # geom_jitter(
+    #   aes(group = owner), 
+    #   alpha = 0.1,
+    #   position = position_jitterdodge(
+    #     jitter.height = 0.5, 
+    #     jitter.width = 0.15)) +
     scale_fill_brewer(palette = "Paired") +
+    scale_x_discrete(
+      labels = c(
+        "Private\neasment", 
+        "Private\nunprotected", 
+        "Public")) +
+    scale_y_continuous(limits = c(0, 0.2)) +
     labs(
       fill = "Landowner",
       y = "Shannon index <i>H</i>",
       x = "") +
     theme(
-      legend.position = "top",
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
+      legend.position = "none",
+      axis.text.x = element_text(size = 8),
+      #axis.ticks.x = element_blank(),
       axis.title.y = ggtext::element_markdown()),
 
   data %>% 
   ggplot(aes(x = owner, y = hill, fill = owner)) + 
-    geom_boxplot() +
+    geom_boxplot(outlier.size = 0.5) +
     scale_fill_brewer(palette = "Paired") +
     labs(
       fill = "Landowner",
       y = "Effective # of species *exp(H)*",
       x = "") +
+    scale_x_discrete(
+      labels = c(
+        "Private\neasment", 
+        "Private\nunprotected", 
+        "Public")) +
+    scale_y_continuous(limits = c(1, 1.2)) +
     theme(
-      legend.position = "top",
-      axis.text.x = element_blank(),
-      axis.ticks.x = element_blank(),
+      legend.position = "none",
+      axis.text.x = element_text(size = 8),
+      #axis.ticks.x = element_blank(),
       axis.title.y = ggtext::element_markdown()),
-  common.legend = T,
+  #common.legend = T,
   ncol = 2
 )
+
+ggsave(
+  "output/plots/ch2/diversity.png",
+  width = 6.25,
+  height = 3.5,
+  units = "in",
+  dpi = 300
+  )
 
 ```
 
@@ -610,8 +796,12 @@ Still working on this...
 <!-- Begin with a statement that summarizes the study’s main findings. Develop the significance and importance of the results and set them into a framework of previous research. Additional statistical tests and results are inappropriate here except in unusual cases. If you have a Conclusion section, list it as a subheading within the Discussion. -->
 
 We found that although grassland bird communities were more diverse on public lands, they had equal richness and lower abundances than on private lands that were in conservation easements or unprotected.
+Our findings are similar to those elsewhere, with richness being lower in protected forests [@rayner2013]
+
 What about landscape-level protected area? Development? Forest?
 What about an insulating effect of protected land on development (if dvp is negative)?
+Richness of grassland-specialist species increased with increasing proportion of CRP easements in the landscape [@pavlackyjr.2022]
+Public areas can protect species from climate change [@gauzere2016]
 Public lands do not appear to have a safeguarding effect on grassland birds as a whole in this region, although...
 
 It is worth noting that the types of lands sampled may have had an impact on the results.
@@ -620,8 +810,9 @@ Additionally, contrary to the typical ethos of preservation embodied by the Nati
 
 <!-- Next steps -->
 Development of spatially-explicit models of grassland bird diversity for this region that incorporate protected areas could help target conservation activity throughout the Piedmont region.
+Such models can target areas with the most potential to increase abundance through additions of conservation easements on private land [@packlackyjr.2022].
 These data represent a robust long-term monitoring effort within the region.
-Comparing population trends by species with the North American Breeding Bird Survey could [@dettling2021].
+Comparing population trends by species with the North American Breeding Bird Survey could [@dettling2021]. Despite lower abundances, it  may be that birds within protected areas are experiencing population declines of a less rapid rate than in the region as a whole.
 
 # Acknowledgments
 
