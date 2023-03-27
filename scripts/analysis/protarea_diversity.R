@@ -2,28 +2,59 @@
 
 # Setup -------------------------------------------------------------------
 
-library(tidyverse)
-library(ggtext)
-library(glue)
-library(sf)
-library(vegan)
-library(AICcmodavg)
+library(tidyverse) # For data manipulation
+library(ggtext) # To format text on graphs
+library(glue) # To easily combine text
+library(sf) # Not needed but the points are spatial
+library(ggpubr) # To combine figures, if needed
+library(vegan) # For diversity analysis
+library(multcompView) # For graph letter contrasts ANOVA
+source("scripts/wrangling/sample_maxn_method.r") # Fixes slice_sample
 
 # Read in data: points, visits, birds, species
 read_rds("data/processed/ch2_combined_birds.rds") %>% 
   list2env(.GlobalEnv)
 
 # Read in covariates
-landcover <- read_rds("data/processed/ch2_pointcovs.rds")
+landcover <- 
+  read_rds("data/processed/ch2_pointcovs.rds") %>% 
+  st_drop_geometry() %>% 
+  select(-geometry) %>% 
+  left_join(points)
 
-# Remove all incidentals
+# Remove all incidentals (sorry owls and WTKI)
 birds <- 
-  filter(birds, incidental == 0) %>% select(-incidental)
+  filter(birds, incidental == 0) %>% 
+  select(-incidental)
 
-# Set theme for plotting
+# Oops, add property acreage
+points <-
+  points %>% 
+  left_join(
+    readxl::read_xlsx("data/raw/VWL_Property_Database.xlsx", sheet = 3) %>% 
+      select(property_id = Property_ID, acreage = Acreage) %>% 
+      mutate(
+        property_id = as.character(property_id), 
+        acreage = as.numeric(acreage)) %>% 
+    bind_rows(
+      # Acreage of NPS parks from Wikipedia... hacky solution...
+      tibble(
+        property_id = c("ANTI", "MANA", "MONO", "HAFE"), 
+        acreage = c(3249.92, 4522.24, 1500.16, 2385.28))),
+    by = "property_id") %>% 
+  # Log is more normaler
+  mutate(log_acres = log(acreage))
+
+# Set default plot theme
 theme_set(
-  theme_bw(base_size = 12) +
-  theme(strip.background = element_blank()))
+  theme_bw(base_size = 10) +
+  theme(
+    strip.text = element_text(size = 11),
+    axis.text = element_text(size = 9),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 10),
+    panel.grid = element_blank(),
+    strip.background = element_blank()))
 
 # Set palette for fac/ob
 pal <- c(facultative = "gray", obligate = "black")
@@ -34,7 +65,7 @@ radii <- unique(landcover$radius)
 
 # How many points
 points %>% 
-  count(owner) %>% st_drop_geometry() %>% 
+  count(owner) %>% 
   left_join(
   # How many visits per point
   visits %>% 
@@ -43,7 +74,19 @@ points %>%
     group_by(owner) %>% 
     summarize(
       visits_per_point = mean(n), 
-      se = sd(n)/sqrt(length(n))))
+      se_visits = sd(n)/sqrt(length(n)))) %>% 
+  # How many points per property
+  left_join(
+    points %>% 
+      count(property_id, owner) %>% 
+      group_by(owner) %>% 
+      summarize(
+        points_per_property = mean(n),
+        se_pts = sd(n)/sqrt(length(n))
+      )
+  )
+
+
 
 # How many grassland species?
 nrow(sp_grs)
@@ -51,15 +94,24 @@ nrow(sp_grs)
 # What was the distribution of ownership over years?
 visits %>% 
   left_join(points) %>% 
-  distinct(point_id, year, owner) %>% 
-  count(year, owner) %>% 
+  distinct(point_id, year, owner, source) %>% 
+  filter(point_id != "1903") %>% 
+  count(year, owner, source) %>% 
   ggplot(
     aes(x = year, y = n, fill = owner)) + 
-    geom_col() + 
+    geom_col(aes(group = source), color = "black", size = 0.25) + 
     scale_fill_brewer(palette = "Paired") + 
     scale_x_continuous(breaks = c(2012:2022)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(fill = "Landowner", y = "Points surveyed", x = "") +
   theme(legend.position = "top")
+
+ggsave(
+  "output/plots/ch2/sample_size.png", 
+  width = 5, 
+  height = 3, 
+  units = "in", 
+  dpi = 300)
 
 # All species x visits
 spxvisit <- expand(birds, visit_id, species)
@@ -93,14 +145,21 @@ birds %>%
     labs(
       x = "Individuals detected", 
       y = "", 
-      fill = "Grassland species:") + 
+      fill = "Grassland species") + 
     scale_fill_manual(values = pal) +
   scale_x_continuous(
     limits = c(0, 5500), 
     expand = c(0,0)) +
   theme(
     axis.text.y = ggtext::element_markdown(),
-    legend.position = "top")
+    legend.position = c(0.75, 0.15))
+
+ggsave(
+  "output/plots/ch2/species_detections.png", 
+  width = 4.5, 
+  height = 5, 
+  units = "in", 
+  dpi = 300)
 
 ## Rarefaction ----
 # Make a species accumulation curve
@@ -146,8 +205,14 @@ visits %>%
   facet_wrap(vars(owner)) +
     labs(
       x = "Total visits to point", 
-      y = "Total grassland species", 
-      title = "Species accumulation")
+      y = "Total grassland species")
+
+ggsave(
+  "output/plots/ch2/species_accumcurve.png", 
+  width = 6.5, 
+  height = 2.75, 
+  units = "in", 
+  dpi = 300)
 
 ## Ob/fac abundance ----
 
@@ -742,4 +807,112 @@ sp_anovas <-
       p.value < 0.05 ~ "P<0.05",
       TRUE ~ "n.s.")) 
 
+# Regression variables
+data_models <- 
+  data2 %>% 
+  group_by(property_id) %>% 
+  #slice_sample(n = 3, replace = F) %>% 
+  ungroup()
 
+models <-
+  data_models %>% 
+  select(log_acres:ncol(data_models) & contains("_")) %>% 
+  names() %>% 
+  paste("abund_ob ~ owner +", .) %>% 
+  map(
+    ~lm(as.formula(.x), data = data_models))
+
+models_summary <-
+  map_dfr(
+    models, 
+    broom::tidy,
+    .id = "model") %>% 
+  filter(!term == "(Intercept)", !str_detect(term, "owner")) %>% 
+  separate(term, c("term", "radius"), sep = "_") %>% 
+  mutate(
+    term = if_else(radius == "acres", "log_acres", term),
+    radius = as.numeric(radius),
+    AIC = purrr::map_dbl(models, AIC),
+    logLik = purrr::map_dbl(models, logLik),
+    sig = if_else(p.value<0.05, "P<0.05", "n.s.")) 
+
+ggplot(
+  models_summary %>% filter(term!="log_acres"),
+  aes(x = radius, y = abs(estimate))) +
+  geom_line(aes(group = term), size = 0.25) +
+  geom_text(
+    data = models_summary %>% 
+      filter(
+        term!="log_acres",
+        sig!="n.s.") %>% 
+      group_by(term) %>% 
+      slice_max(order_by = abs(estimate)),
+    aes(
+      x = radius, 
+      y = abs(estimate) + 
+        min(1.1, (0.13 * abs(estimate)))),
+    label = "↓",
+    color = "red"
+  ) +
+  geom_point(
+    aes(group = term, fill = sig), 
+    size = 1,
+    stroke = 0.25,
+    shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  facet_wrap(vars(term), scales = "free") +
+  scale_y_continuous(
+    expand = expansion(mult = c(0.1, 0.1))) +
+  theme(legend.position = c(0.8, 0.15)) +
+  labs(
+    fill = "Significance",
+    x = "Buffer radius",
+    y = "|estimate|")
+
+
+ggplot(
+  models_summary %>% filter(term!="log_acres"),
+  aes(x = radius, y = logLik)) +
+  geom_line(aes(group = term), size = 0.25) +
+  geom_text(
+    data = models_summary %>% 
+      filter(
+        term!="log_acres",
+        sig!="n.s.") %>% 
+      group_by(term) %>% 
+      slice_max(order_by = logLik),
+    aes(
+      x = radius, 
+      y = logLik + 
+        max(1, 0.0025 * abs(logLik))),
+    label = "↓",
+    color = "red"
+  ) +
+  geom_point(
+    aes(group = term, fill = sig), 
+    size = 1,
+    stroke = 0.25,
+    shape = 21) +
+  scale_fill_manual(values = c("white", "black")) +
+  facet_wrap(vars(term), scales = "free") +
+  scale_y_continuous(
+    expand = expansion(mult = c(0.1, 0.1))) +
+  theme(legend.position = c(0.8, 0.15)) +
+  labs(
+    fill = "Significance",
+    x = "Buffer radius",
+    y = "Log-likelihood")
+
+
+models_summary %>% 
+  filter(term!="log_acres") %>% 
+  group_by(term) %>% 
+  slice_max(order_by = logLik)
+
+models_summary %>% 
+  filter(term!="log_acres") %>% 
+  group_by(term) %>% 
+  slice_max(order_by = abs(estimate))
+
+
+lm(abund_ob ~ owner, data = data2) %>% summary()
