@@ -142,7 +142,7 @@ det_models <-
     doy_temp_time = 
       occu(data = umf, 
         formula = ~scale(doy)+ scale(temperature) + scale(time) ~ 1)
-    ); beep("treasure")
+    ); beep("ping")
 
 aictab(det_models)
 
@@ -173,6 +173,18 @@ trend_models <-
          as.formula(paste(best_det, 
          "year", 
          sep = " ~ "))),
+    yearpark =
+      occu(data = umf, 
+        formula = 
+         as.formula(paste(best_det, 
+         "year + park", 
+         sep = " ~ "))),
+    park =
+      occu(data = umf, 
+        formula = 
+         as.formula(paste(best_det, 
+         "park", 
+         sep = " ~ "))),
     yearfct =
       occu(data = umf,
         formula = 
@@ -191,7 +203,7 @@ trend_models <-
          as.formula(paste(best_det, 
          "year_fct * park", 
          sep = " ~ ")))
-  ) ; beep("treasure")
+  ) ; beep("ping")
 
 aictab(trend_models)
 
@@ -231,12 +243,6 @@ hab_models <-
   list(
     null = m.psi0,
   # Single models
-    field =
-      occu(data = umf, 
-        formula = 
-         as.formula(paste(best_det, 
-         "field_type", 
-         sep = " ~ "))),
     habitat =
       occu(data = umf, 
         formula = 
@@ -281,12 +287,6 @@ hab_models <-
            "scale(shrub) + scale(angle_mean)", 
            sep = " ~ "))),
   # Full models
-    field_anglemean_shrub =
-      occu(data = umf, 
-        formula = 
-         as.formula(paste(best_det, 
-         "field_type + scale(angle_max) + scale(shrub) ", 
-         sep = " ~ "))),
     hab_anglemax_shrub =
       occu(data = umf, 
         formula = 
@@ -299,7 +299,7 @@ hab_models <-
          as.formula(paste(best_det, 
          "habitat + scale(angle_mean) + scale(shrub) ", 
          sep = " ~ ")))
-    ); beep("treasure")
+    ); beep("ping")
 
 aictab(hab_models)
 
@@ -348,7 +348,7 @@ mgmt_models <-
           as.formula(paste(best_det, 
           "ever_burned + leased", 
           sep = " ~ ")))
-  ); beep("treasure")
+  ); beep("ping")
 
 aictab(mgmt_models)
 
@@ -392,7 +392,7 @@ mgmt_subset_models <-
           as.formula(paste(best_det,
           "scale(years_limited)",
           sep = " ~ ")))
-  ); beep("treasure")
+  ); beep("ping")
 
 aictab(mgmt_subset_models)
 
@@ -634,13 +634,13 @@ land_models <-
            as.formula(paste(best_det, 
            "scale(grs_250) + scale(for_250) + scale(dvp_250)", 
            sep = " ~ ")))
-      ) ; beep("treasure")
+      ) ; beep("ping")
 
 aictab(land_models)  
 
 # EAME: Best single is forest 5km (+) but if I eliminate 5km scale,
 #       then best single is grass 250m (+). 
-#       Best combo tested is close grass, broader crop and development.
+#       Best combo tested is close grass+, close development- broad crop- [is this just park?].
 # GRSP: Best single is forest 250m (-)
 #       Best combo tested is close grass (+) close forest (-) close dvp (-)
 
@@ -660,96 +660,97 @@ combo_models <-
     year = trend_models$year,
     yearfct = trend_models$yearfct,
     parkxyear = trend_models$yearxpark,
+    park = trend_models$park,
     # Casettes
     hab = 
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_hab, "year", sep = "+"), 
+             paste(best_hab, best_trend, sep = "+"), 
              sep = " ~ "))),
-    hab_f = 
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_hab, "year_fct", sep = "+"), 
-             sep = " ~ "))),
+    # hab_p = 
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_hab, best_trend, "park", sep = "+"), 
+    #          sep = " ~ "))),
     land = 
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_land, "year", sep = "+"), 
+             paste(best_land, best_trend, sep = "+"), 
              sep = " ~ "))),
-    land_f = 
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_land, "year_fct", sep = "+"), 
-             sep = " ~ "))),
+    # land_p = 
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_land, best_trend, "park", sep = "+"), 
+    #          sep = " ~ "))),
     mgmt = 
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_mgmt, "year", sep = "+"),
+             paste(best_mgmt, best_trend, sep = "+"),
              sep = " ~ "))),
-    mgmt_f = 
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_mgmt, "year_fct", sep = "+"),
-             sep = " ~ "))),
+    # mgmt = 
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_mgmt, best_trend, "park", sep = "+"),
+    #          sep = " ~ "))),
     # Habitat + land
     hab_land =
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_hab, best_land, "year", sep = "+"),
+             paste(best_hab, best_land, best_trend, sep = "+"),
              sep = " ~ "))),
-    hab_land_f =
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_hab, best_land, "year_fct", sep = "+"),
-             sep = " ~ "))),
+    # hab_land_p =
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_hab, best_land, best_trend, "park", sep = "+"),
+    #          sep = " ~ "))),
     # Habitat + mgmt
     hab_mgmt =
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_hab, best_mgmt, "year", sep = "+"),
+             paste(best_hab, best_mgmt, best_trend, sep = "+"),
              sep = " ~ "))),
-    hab_mgmt_f =
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_hab, best_mgmt, "year_fct", sep = "+"),
-             sep = " ~ "))),
+    # hab_mgmt_p =
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_hab, best_mgmt, best_trend, "park", sep = "+"),
+    #          sep = " ~ "))),
     # Land + mgmt
     land_mgmt =
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_land, best_mgmt, "year", sep = "+"),
+             paste(best_land, best_mgmt, best_trend, sep = "+"),
              sep = " ~ "))),
-    land_mgmt_f =
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_land, best_mgmt, "year_fct", sep = "+"),
-             sep = " ~ "))),
+    # land_mgmt_p =
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_land, best_mgmt, best_trend, "park", sep = "+"),
+    #          sep = " ~ "))),
     # Habitat + land + mgmt
     hab_land_mgmt =
       occu(data = umf, 
            formula = 
              as.formula(paste(best_det, 
-             paste(best_hab, best_land, best_mgmt, "year", sep = "+"),
-             sep = " ~ "))),
-    hab_land_mgmt_f =
-      occu(data = umf, 
-           formula = 
-             as.formula(paste(best_det, 
-             paste(best_hab, best_land, best_mgmt, "year_fct", sep = "+"),
+             paste(best_hab, best_land, best_mgmt, best_trend, sep = "+"),
              sep = " ~ ")))
-    ) ; beep("treasure")
+    # hab_land_mgmt_p =
+    #   occu(data = umf, 
+    #        formula = 
+    #          as.formula(paste(best_det, 
+    #          paste(best_hab, best_land, best_mgmt, best_trend, "park", sep = "+"),
+    #          sep = " ~ ")))
+    ) ; beep("ping")
   
 aictab(combo_models)
 
@@ -836,16 +837,29 @@ write.xlsx(
 
 # Predict detection variables ---------------------------------------------
 
+defaults_detection <-
+  data.frame(
+    doy = 
+      mean(umf@obsCovs$doy, na.rm = T), 
+    wind = 
+      levels(umf@obsCovs$wind)[1],
+    disturbance = 
+      levels(umf@obsCovs$disturbance)[1],
+    temperature = 
+      mean(umf@obsCovs$temperature, na.rm = T), 
+    time = 
+      mean(umf@obsCovs$time, na.rm = T),
+    observer = 
+      names(which.max(table(umf@obsCovs$observer))))
+
 # Wind 
 pred.p_wind <-
   predict(
     best_full, 
     type = "det", 
-    newdata = data.frame(
-      wind = 
-        factor(
-          levels(obs_covs$wind$wind_1), 
-          levels = levels(obs_covs$wind$wind_1))), 
+    newdata = bind_cols(
+      wind = levels(umf@obsCovs$wind), 
+      select(defaults_detection, -wind)), 
     appendData = T)
 
 pred.p_wind
@@ -855,11 +869,9 @@ pred.p_dist <-
   predict(
     best_full, 
     type = "det", 
-    newdata = data.frame(
-      disturbance = 
-        factor(
-          levels(obs_covs$disturbance$disturb_1), 
-          levels = levels(obs_covs$disturbance$disturb_1))),
+    newdata = bind_cols(
+      disturbance = levels(umf@obsCovs$disturbance), 
+      select(defaults_detection, -disturbance)), 
     appendData = T)
 
 pred.p_dist
@@ -869,12 +881,12 @@ pred.p_doy <-
   predict(
     best_full, 
     type = "det", 
-    newdata = 
-      data.frame(
-        doy = 
-          seq(from = unname(summary(umf@obsCovs$doy)[1]),
-              to =   unname(summary(umf@obsCovs$doy)[6]),
-              length.out = 30)),
+    newdata = bind_cols(
+      doy = seq(
+        min(umf@obsCovs$doy, na.rm = T),
+        max(umf@obsCovs$doy, na.rm = T),
+        by = 1),
+      select(defaults_detection, -doy)), 
     appendData = T)
 
 pred.p_doy
@@ -884,12 +896,12 @@ pred.p_temp <-
   predict(
     best_full, 
     type = "det", 
-    newdata = 
-      data.frame(
-        temperature = 
-          seq(from = unname(summary(umf@obsCovs$temperature)[1]),
-              to =   unname(summary(umf@obsCovs$temperature)[6]),
-              length.out = 30)),
+    newdata = bind_cols(
+      temperature = seq(
+        min(umf@obsCovs$temperature, na.rm = T),
+        max(umf@obsCovs$temperature, na.rm = T),
+        by = 1),
+      select(defaults_detection, -temperature)),
     appendData = T)
 
 pred.p_temp
@@ -899,12 +911,12 @@ pred.p_time <-
   predict(
     best_full, 
     type = "det", 
-    newdata = 
-      data.frame(
-        time = 
-          seq(from = unname(summary(umf@obsCovs$time)[1]),
-              to =   unname(summary(umf@obsCovs$time)[6]),
-              length.out = 30)),
+    newdata = bind_cols(
+      time = seq(
+        min(umf@obsCovs$time, na.rm = T),
+        max(umf@obsCovs$time, na.rm = T),
+        by = 1),
+      select(defaults_detection, -time)),
     appendData = T)
 
 pred.p_time
@@ -1004,9 +1016,7 @@ defaults <-
     leased =   
       factor(levels(siteyear_covs$leased)[2],
              levels = levels(siteyear_covs$leased)),
-    park =      
-      factor(levels(siteyear_covs$park)[1],
-             levels = levels(siteyear_covs$park)),
+    park =  "ANTI",
     prop_burned = 
       mean(siteyear_covs$prop_burned, na.rm = T),
     shrub =
@@ -1525,3 +1535,14 @@ bind_rows(
            common_name = sp_long) %>% 
   
   write_rds(paste0("output/predicted_", sp, ".rds"))
+
+# Load outputs for testing purposes ---------------------------------------
+
+read_rds(paste0("output/all_fitted_models_", sp, ".rds")) |> 
+  list2env(.GlobalEnv)
+
+read_rds(paste0("output/best_model_", sp, ".rds")) |> 
+  list2env(.GlobalEnv)
+
+
+

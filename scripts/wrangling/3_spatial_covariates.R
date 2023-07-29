@@ -11,7 +11,6 @@ library(tmap)
 library(FedData)
 library(raster)
 library(tidyverse)
-library(lubridate)
 
 # Read in data ------------------------------------------------------------
 
@@ -35,7 +34,7 @@ library(lubridate)
 
 # Read in NPS points
 points <-
-  read_rds("data/processed/birds.rds")$points %>% 
+  read_rds("data/processed/birds.rds")$points |> 
   st_as_sf(coords = c("long", "lat"), remove = FALSE, crs = "EPSG:4326")
 
 # Read in NPS visits
@@ -44,7 +43,7 @@ visits <-
 
 # Get boundary for NLCD import
 nlcd_bbox <- 
-  st_as_sfc(st_bbox(points)) %>% 
+  st_as_sfc(st_bbox(points)) |> 
   st_buffer(dist = 5100)
 
 # Download NLCD
@@ -67,7 +66,7 @@ points_aea <- st_transform(points, crs = st_crs(nlcd))
 
 # Get park shapefiles
 parks <-
-  st_read("data/processed/focal_parks.shp") %>% 
+  st_read("data/processed/focal_parks.shp") |> 
   st_transform(crs = st_crs(nlcd))
 
 # Read in burn data
@@ -75,10 +74,10 @@ burns <-
   map_dfr(
     c("ANTI", "MANA", "MONO", "HAFE"),
     ~st_read(
-      paste0("data/raw/", ., "_WF.shp")) %>% 
+      paste0("data/raw/", ., "_WF.shp")) |> 
     # Set CRS to that of points
     st_transform(
-      crs = st_crs(points)) %>% 
+      crs = st_crs(points)) |> 
     # Simplify dataset
     dplyr::select(
       park = UnitCode,
@@ -89,7 +88,7 @@ burns <-
 
 # Read in veg data
 veg <- 
-  read_csv('data/raw/FinalVegData.csv') %>% 
+  read_csv('data/raw/FinalVegData.csv') |> 
   mutate(
     grts = as.numeric(GRTS_Order),
     # Fix clinometer readings: topo slope -> degrees
@@ -97,12 +96,12 @@ veg <-
 
 # Read in harvest data
 harvest <-
-  read_csv('data/raw/nps_harvest.csv') %>% 
+  read_csv('data/raw/nps_harvest.csv') |> 
   left_join(
-    read_csv('data/raw/nps_harvest.csv') %>% 
-    filter(leased == 1) %>% 
+    read_csv('data/raw/nps_harvest.csv') |> 
+    filter(leased == 1) |> 
     select(grts, newlimit = harvest_limit),
-    by = 'grts') %>% 
+    by = 'grts') |> 
   dplyr::select(grts, leased, harvest_date, harvest_limit = newlimit)
 
 
@@ -112,7 +111,7 @@ harvest <-
 for(p in c("ANTI", "HAFE", "MANA", "MONO")) {
   # Get park outline
   extent <- 
-    st_buffer(parks[parks$UNIT_CODE == p, ], dist = 300) %>% st_bbox()
+    st_buffer(parks[parks$UNIT_CODE == p, ], dist = 300) |> st_bbox()
   # Plot NLCD with no resample in park area
   plot(nlcd, ext = extent, maxpixels = ncell(nlcd))
   # Add park boundary
@@ -121,8 +120,8 @@ for(p in c("ANTI", "HAFE", "MANA", "MONO")) {
     lwd = 2, border = "black", add = T)
   # Add burns (SP can do line density fills)
   plot(
-    st_union(burns) %>% 
-      st_transform(crs = crs(nlcd)) %>% 
+    st_union(burns) |> 
+      st_transform(crs = crs(nlcd)) |> 
       as_Spatial(), 
     angle = 10, density = 30, col = "grey40", border = "grey40", add = T)
   # Add 100m points
@@ -151,38 +150,37 @@ dev.off()
 
 # Check raster values are right
 unique(raster::values(nlcd))
-levels(nlcd)[[1]][levels(nlcd)[[1]]$COUNT > 0, ]
-nlcd_colors() %>% filter(ID %in% unique(raster::values(nlcd)))
+nlcd_colors() |> filter(ID %in% unique(raster::values(nlcd)))
 
 ## Create reclass matrices ----
 
 # Developed reclass matrix
 rcl_dvp <-
   tibble(
-    nlcd_value = unique(nlcd)) %>% 
-    mutate(developed = if_else(nlcd_value %in% c(22, 23, 24), 1, 0)) %>% 
+    nlcd_value = unique(nlcd)) |> 
+    mutate(developed = if_else(nlcd_value %in% c(22, 23, 24), 1, 0)) |> 
     as.matrix()
   
 # Grassland reclass matrix
 rcl_grs <-
   tibble(
-    nlcd_value = unique(nlcd)) %>% 
-    mutate(grassland = if_else(nlcd_value %in% c(52, 71, 81), 1, 0)) %>% 
+    nlcd_value = unique(nlcd)) |> 
+    mutate(grassland = if_else(nlcd_value %in% c(52, 71, 81), 1, 0)) |> 
     as.matrix()
 
 # Forest reclass matrix
 # Now including Woody wetlands
 rcl_for <-
   tibble(
-    nlcd_value = unique(nlcd)) %>% 
-    mutate(forest = if_else(nlcd_value %in% c(41:43, 90), 1, 0)) %>% 
+    nlcd_value = unique(nlcd)) |> 
+    mutate(forest = if_else(nlcd_value %in% c(41:43, 90), 1, 0)) |> 
     as.matrix()
 
 # Cropland reclass matrix
 rcl_crp <-
   tibble(
-    nlcd_value = unique(nlcd)) %>% 
-    mutate(cropland = if_else(nlcd_value == 82, 1, 0)) %>% 
+    nlcd_value = unique(nlcd)) |> 
+    mutate(cropland = if_else(nlcd_value == 82, 1, 0)) |> 
     as.matrix()
 
 # Reclassify and stack results
@@ -207,16 +205,16 @@ landcover <-
       reclass, 
       points_aea,
       df = TRUE,
-      buffer = .x, fun = mean) %>% 
-      mutate(radius = .x) %>% 
-      as_tibble()) %>% 
+      buffer = .x, fun = mean) |> 
+      mutate(radius = .x) |> 
+      as_tibble()) |> 
   # Add GRTS number back
-  mutate(grts = rep(points_aea$grts, length(radii))) %>% 
+  mutate(grts = rep(points_aea$grts, length(radii))) |> 
   # Lengthen and then widen to get all landcover-radii by point (for_500 etc.)
   pivot_longer(
     cols = c(crp, dvp, for., grs), 
-    names_to = "landcover", values_to = "proportion") %>% 
-  mutate(landcover = str_remove(landcover, "\\.")) %>% 
+    names_to = "landcover", values_to = "proportion") |> 
+  mutate(landcover = str_remove(landcover, "\\.")) |> 
   pivot_wider(
     id_cols = grts, names_from = c(landcover, radius),
     names_glue = "{landcover}_{radius}", values_from = proportion)
@@ -229,21 +227,23 @@ rm(rcl_crp, rcl_dvp, rcl_for, rcl_grs)
   
 # Get only points that burned (~22 seconds)
 burned_points <-
-  points %>% 
+  points |> 
     # Buffer survey area 100m around point, get burns that intersect
-    st_buffer(dist = 100) %>% 
-    st_intersection(burns) %>% 
-    as_tibble() %>% 
+    st_buffer(dist = 100) |> 
+    st_intersection(burns) |> 
+    as_tibble() |> 
   cbind(
-    points %>% 
+    points |> 
       # Buffer survey area 100m around point, get burns that intersect
-      st_buffer(dist = 100) %>% 
-      st_intersection(burns) %>% 
-      st_area() %>% 
-      as_tibble() %>% 
-        mutate(prop_burned = as.numeric(value)/(pi*100*100))) %>% 
-    dplyr::select(park, grts, fire_year, fire_date, prop_burned) %>% 
-    arrange(grts, fire_date)
+      st_buffer(dist = 100) |> 
+      st_intersection(burns) |> 
+      st_area() |> 
+      as_tibble() |> 
+        mutate(prop_burned = as.numeric(value)/(pi*100*100))) |> 
+    dplyr::select(park, grts, fire_year, fire_date, prop_burned) |> 
+    arrange(grts, fire_date) |> 
+  # ONLY INCLUDE 10% BURNED
+  filter(prop_burned >= 0.1)
  
 
 ## Annual burn ----
@@ -255,9 +255,8 @@ annual_burns <-
     function(i) {
       # Split: get only this point
       grts_split <-
-        burned_points %>% 
+        burned_points |> 
         filter(grts == i)
-      
       # Apply: Perform another function (over years)
       inner_map <-
         map(
@@ -266,57 +265,53 @@ annual_burns <-
           function(y) {
             # Split: get only fires during or before this year
             burn_split <-
-              grts_split %>% 
+              grts_split |> 
               filter(fire_year <= y)
-            
             # Apply: get most recent burn
             tibble(
               year = y,
               last_burn = max(burn_split$fire_year, na.rm = T))
           })
-      
         # Combine: Get last burn in all years for this point
-        bind_rows(inner_map) %>% 
+        bind_rows(inner_map) |> 
           mutate(grts = i)      
-          }
-        )
-
-annual_burns <-
-  # Combine: put all GRTS point IDs together
-  bind_rows(annual_burns) %>%
-    dplyr::select(grts, year, last_burn) %>% 
-    mutate(
-      # Fix Inf to NA
-      last_burn = na_if(last_burn, -Inf),
-      last_burn = na_if(last_burn, Inf),
-      # Create annual time since burn
-      t_since_burn = year - last_burn) %>% 
+          }) |> 
+  bind_rows() |> 
+  dplyr::select(grts, year, last_burn) |> 
+  mutate(
+    # Fix Inf to NA
+    last_burn = na_if(last_burn, -Inf),
+    last_burn = na_if(last_burn, Inf),
+    # Create annual time since burn
+    t_since_burn = year - last_burn) |> 
     # Add NA points
     right_join(
-      points %>% 
-        dplyr::select(grts),
-      by = 'grts') %>% 
-    arrange(grts) %>% 
+      points |> 
+        st_drop_geometry() |> dplyr::select(grts),
+      by = 'grts') |> 
+    arrange(grts) |> 
     # Add years for unburned points
-    complete(grts, year) %>% 
-    dplyr::select(grts, year, t_since_burn) %>% 
-    filter(!is.na(year)) %>% 
+    complete(grts, year) |> 
+    dplyr::select(grts, year, t_since_burn) |> 
+    filter(!is.na(year)) |> 
     # Add area burned
     left_join(
-      burned_points %>% dplyr::select(grts, year = fire_year, prop_burned), 
+      burned_points |> dplyr::select(grts, year = fire_year, prop_burned), 
       by = c("grts", "year"))
 
 # Veg data ----------------------------------------------------------------
 
 veg_static <-
-  veg %>% 
+  veg |> 
     mutate(
       shrub = 
-        rowMeans(dplyr::select(veg, c(Shrub_N:Shrub_W)), 
-                 na.rm = TRUE),
+        rowMeans(
+          dplyr::select(veg, c(Shrub_N:Shrub_W)), 
+          na.rm = TRUE),
       clin_mean = 
-        rowMeans(dplyr::select(veg, c(Clin_N:Clin_W)), 
-                 na.rm = TRUE)) %>% 
+        rowMeans(
+          dplyr::select(veg, c(Clin_N:Clin_W)), 
+          na.rm = TRUE)) |> 
     dplyr::select(
       grts = GRTS_Order,
       trees = Trees,
@@ -329,8 +324,8 @@ veg_static <-
 
 # Get only field type; reassign mismatch
 field_type <-
-  veg %>% 
-  dplyr::select(grts, Type_1, Type_2) %>% 
+  veg |> 
+  dplyr::select(grts, Type_1, Type_2) |> 
   mutate(
     field_type =
       case_when(
@@ -344,37 +339,40 @@ field_type <-
         grts %in% c('1146', '1254', '2932', '2994', '3359') ~ 'Woods',
         grts == '684' ~ 'Hayfield',
         # All other mismatches are hay
-        TRUE ~ 'Hayfield')) %>% 
+        TRUE ~ 'Hayfield')) |> 
   dplyr::select(grts, field_type)
 
 # Harvest data ------------------------------------------------------------
 
 lease <-
-  read_csv('data/raw/nps_harvest_update.csv') %>% 
+  read_csv('data/raw/nps_harvest_update.csv') |> 
   mutate(
-    grass_type = if_else(is.na(grass_type) & habitat_type == "hayfield", "CSG", grass_type))
+    grass_type = if_else(
+      is.na(grass_type) & habitat_type == "hayfield", 
+      "CSG", 
+      grass_type))
 
 ## Annual harvest ----
 
 # Get first year surveyed
 first_survey <- 
-  visits %>% 
-    dplyr::select(grts, year) %>% 
-    group_by(grts) %>% 
+  visits |> 
+    dplyr::select(grts, year) |> 
+    group_by(grts) |> 
     summarize(first_survey = min(year))
 
 # Get annual harvest date. This should be a for loop or map...
 harv1 <-
-  lease %>% 
-  arrange(grts) %>% 
+  lease |> 
+  arrange(grts) |> 
     mutate(
       first_limit = year(mdy(harvest_date)),
       ever_limit = harvest_limit,
       harvest_date = yday(mdy(harvest_date))) 
   
 annual_harvest <-
-  crossing(grts = points$grts, year = c(2014:2021)) %>% 
-    left_join(harv1) %>% 
+  crossing(grts = points$grts, year = c(2014:2021)) |> 
+    left_join(harv1) |> 
     mutate(
       harvest_limit = 
         case_when(
@@ -383,30 +381,30 @@ annual_harvest <-
           leased == 0 ~ NA_real_),
       harvest_day = if_else(harvest_limit == 0, NA_real_, harvest_date),
       years_limited = 1 + year - first_limit, 
-      years_limited = if_else(years_limited < 1, 0, years_limited))  %>% 
+      years_limited = if_else(years_limited < 1, 0, years_limited))  |> 
     dplyr::select(grts, year, harvest_limit, years_limited, harvest_day)
 
 # Static covariates -------------------------------------------------------
 
 static <-
-  points %>% 
-    left_join(field_type) %>% 
-    left_join(veg_static) %>% 
-    left_join(lease) %>% 
-    left_join(landcover) %>% 
+  points |> 
+    left_join(field_type) |> 
+    left_join(veg_static) |> 
+    left_join(lease) |> 
+    left_join(landcover) |> 
     mutate(
       ever_burned = if_else(grts %in% burned_points$grts, 1, 0),
-      habitat = paste(grass_type, habitat_type) %>% str_remove_all("NA ")) %>% 
+      habitat = paste(grass_type, habitat_type) |> str_remove_all("NA ")) |> 
   dplyr::select(-note, -harvest_date, -field_type)
 
-static %>% 
-  st_drop_geometry() %>% 
-  dplyr::select(-point_name, -long, -lat) %>% 
+static |> 
+  st_drop_geometry() |> 
+  dplyr::select(-point_name, -long, -lat) |> 
   write_rds("data/processed/static_covs.rds")
 
 # Annual covariates -------------------------------------------------------
 
-left_join(annual_harvest, annual_burns) %>% 
+left_join(annual_harvest, annual_burns) |> 
   write_rds("data/processed/annual_covs.rds")
 
 
