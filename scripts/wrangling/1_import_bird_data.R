@@ -8,7 +8,6 @@
 
 library(sf)
 library(tidyverse)
-library(lubridate)
 library(suncalc)
 
 taxonomy <-
@@ -141,7 +140,7 @@ counts <-
 
 # Add sunrise time --------------------------------------------------------
 
-visits <-
+timefix <-
   # Subset to relevant variables
   visits |> 
     select(grts, visit_id, date, start_time) |>
@@ -160,10 +159,14 @@ visits <-
         tz = "America/New_York") |> 
         as_tibble(),
       by = c("date", "lat", "long" = "lon")) |> 
-    # Calculate time since sunrise
+  # Calculate time since sunrise
+    mutate(start_dttm = (ymd(date) + hms(start_time)))
+      
+tz(timefix$start_dttm) <- "America/New_York"
+
+visits <-
+  timefix |> 
     mutate(
-      start_dttm = (ymd(date) + hms(start_time)),
-      tz(start_dttm) <- "America/New_York",
       diff = difftime(start_dttm, sunrise, units = "mins"),
       # Convert to numeric, "minutes after sunrise"
       start_sun = as.numeric(diff, units = "mins")) |> 
